@@ -130,6 +130,12 @@ export default function OnboardingScreen() {
     setShowLegalModal(true);
   };
 
+  const titleLine1 = 'Be Smart';
+  const titleLine2 = 'Smoke Less';
+  const descLine1 = 'Lege deine Wach-Zeiten fest';
+  const descLine2 = 'Wähle dein Tagesziel';
+  const descLine3 = 'Erhalte Sanfte Erinnerungen';
+
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
@@ -144,16 +150,15 @@ export default function OnboardingScreen() {
 
         <SafeAreaView style={styles.container}>
           <View style={styles.content}>
-            <Text style={styles.title}>Be Smart</Text>
+            <View style={styles.titleContainer}>
+              <Text style={styles.title}>{titleLine1}</Text>
+              <Text style={styles.title}>{titleLine2}</Text>
+            </View>
             
             <View style={styles.textContainer}>
-              <Text style={styles.description}>
-                Lege deine Wach-Zeiten fest → wähle dein Tagesziel → erhalte sanfte Erinnerungen.
-              </Text>
-              
-              <Text style={styles.description}>
-                Weniger Zigaretten = längere Pausen = mehr Erfolg.
-              </Text>
+              <Text style={styles.description}>{descLine1}</Text>
+              <Text style={styles.description}>{descLine2}</Text>
+              <Text style={styles.description}>{descLine3}</Text>
             </View>
 
             <View style={styles.buttonContainer}>
@@ -302,18 +307,20 @@ const styles = StyleSheet.create({
     borderRadius: 200,
     backgroundColor: 'rgba(255, 255, 255, 0.3)',
   },
-
+  titleContainer: {
+    alignItems: 'center',
+    marginTop: 20,
+  },
   title: {
     fontSize: 56,
     fontWeight: '900',
     color: '#FFFFFF',
     textAlign: 'center',
-    marginTop: 20,
     letterSpacing: -1,
   },
   textContainer: {
     alignItems: 'center',
-    gap: 24,
+    gap: 20,
   },
   description: {
     fontSize: 18,
