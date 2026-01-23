@@ -9,6 +9,7 @@ import {
   Dimensions,
   Modal,
   ScrollView,
+  ActivityIndicator,
 } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -22,6 +23,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { authClient } from '@/lib/auth';
 
 const { width, height } = Dimensions.get('window');
 
@@ -89,15 +91,37 @@ export default function OnboardingScreen() {
   });
 
   const [showLegalModal, setShowLegalModal] = React.useState(false);
+  const [isSigningIn, setIsSigningIn] = React.useState(false);
 
   const handleStart = async () => {
     console.log('OnboardingScreen: User tapped "Los geht\'s" button');
+    setIsSigningIn(true);
     try {
+      // Use Better Auth for Apple Sign-In
+      // Better Auth handles the OAuth flow and creates/updates user in backend
+      await authClient.signIn.social({
+        provider: 'apple',
+        callbackURL: '/(tabs)/(home)/',
+      });
+      
+      console.log('OnboardingScreen: Apple Sign-In successful via Better Auth');
+      
+      // Mark onboarding as complete
       await AsyncStorage.setItem('smoke-onboarding-completed', 'true');
-      console.log('OnboardingScreen: Onboarding completed, navigating to home');
+      console.log('OnboardingScreen: User authenticated, navigating to home');
       router.replace('/(tabs)/(home)/');
-    } catch (error) {
-      console.error('OnboardingScreen: Error saving onboarding state:', error);
+    } catch (error: any) {
+      console.error('OnboardingScreen: Apple Sign-In error:', error);
+      if (error.code === 'ERR_REQUEST_CANCELED' || error.message?.includes('cancel')) {
+        console.log('OnboardingScreen: User canceled Apple Sign-In');
+      } else {
+        // If Apple Sign-In fails, still allow user to continue
+        // This allows users to skip authentication if they want
+        await AsyncStorage.setItem('smoke-onboarding-completed', 'true');
+        router.replace('/(tabs)/(home)/');
+      }
+    } finally {
+      setIsSigningIn(false);
     }
   };
 
@@ -120,11 +144,9 @@ export default function OnboardingScreen() {
 
         <SafeAreaView style={styles.container}>
           <View style={styles.content}>
-            <Text style={styles.title}>Smoke on Smoke Less</Text>
+            <Text style={styles.title}>Be Smart</Text>
             
             <View style={styles.textContainer}>
-              <Text style={styles.subtitle}>Reduziere in deinem Tempo.</Text>
-              
               <Text style={styles.description}>
                 Lege deine Wach-Zeiten fest → wähle dein Tagesziel → erhalte sanfte Erinnerungen.
               </Text>
@@ -132,8 +154,6 @@ export default function OnboardingScreen() {
               <Text style={styles.description}>
                 Weniger Zigaretten = längere Pausen = mehr Erfolg.
               </Text>
-              
-              <Text style={styles.encouragement}>Du schaffst das.</Text>
             </View>
 
             <View style={styles.buttonContainer}>
@@ -141,8 +161,13 @@ export default function OnboardingScreen() {
                 style={styles.startButton}
                 onPress={handleStart}
                 activeOpacity={0.8}
+                disabled={isSigningIn}
               >
-                <Text style={styles.startButtonText}>Los geht&apos;s</Text>
+                {isSigningIn ? (
+                  <ActivityIndicator color="rgb(29, 200, 130)" />
+                ) : (
+                  <Text style={styles.startButtonText}>Los geht&apos;s</Text>
+                )}
               </TouchableOpacity>
 
               <TouchableOpacity onPress={handleLegalPress} activeOpacity={0.6}>
@@ -256,7 +281,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 32,
-    paddingVertical: 60,
+    paddingTop: 20,
+    paddingBottom: 40,
   },
   orb1: {
     position: 'absolute',
@@ -278,22 +304,16 @@ const styles = StyleSheet.create({
   },
 
   title: {
-    fontSize: 48,
+    fontSize: 56,
     fontWeight: '900',
     color: '#FFFFFF',
     textAlign: 'center',
-    marginTop: 40,
+    marginTop: 20,
     letterSpacing: -1,
   },
   textContainer: {
     alignItems: 'center',
     gap: 24,
-  },
-  subtitle: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#FFFFFF',
-    textAlign: 'center',
   },
   description: {
     fontSize: 18,
@@ -302,13 +322,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 28,
     paddingHorizontal: 8,
-  },
-  encouragement: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#FFFFFF',
-    textAlign: 'center',
-    marginTop: 16,
   },
   buttonContainer: {
     width: '100%',

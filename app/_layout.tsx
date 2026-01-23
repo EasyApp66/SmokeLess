@@ -7,6 +7,7 @@ import { useFonts } from "expo-font";
 import { useColorScheme, Alert } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { WidgetProvider } from "@/contexts/WidgetContext";
+import { AuthProvider } from "@/contexts/AuthContext";
 import "react-native-reanimated";
 import { useNetworkState } from "expo-network";
 import {
@@ -17,6 +18,11 @@ import {
 } from "@react-navigation/native";
 import { Stack, useRouter, useSegments } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import Constants from "expo-constants";
+
+// Log backend URL at app startup for debugging
+const BACKEND_URL = Constants.expoConfig?.extra?.backendUrl || "";
+console.log('🔗 Backend URL configured:', BACKEND_URL);
 
 SplashScreen.preventAutoHideAsync();
 
@@ -100,14 +106,16 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ThemeProvider value={colorScheme === "dark" ? customDarkTheme : customLightTheme}>
-        <WidgetProvider>
-          <SystemBars style={colorScheme === "dark" ? "light" : "dark"} />
-          <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="onboarding" options={{ headerShown: false }} />
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          </Stack>
-          <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
-        </WidgetProvider>
+        <AuthProvider>
+          <WidgetProvider>
+            <SystemBars style={colorScheme === "dark" ? "light" : "dark"} />
+            <Stack screenOptions={{ headerShown: false }}>
+              <Stack.Screen name="onboarding" options={{ headerShown: false }} />
+              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            </Stack>
+            <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
+          </WidgetProvider>
+        </AuthProvider>
       </ThemeProvider>
     </GestureHandlerRootView>
   );

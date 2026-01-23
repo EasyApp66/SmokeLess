@@ -17,6 +17,7 @@ import { IconSymbol } from '@/components/IconSymbol';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function SettingsScreen() {
   console.log('SettingsScreen: Rendering settings screen');
@@ -24,6 +25,7 @@ export default function SettingsScreen() {
   const isDark = colorScheme === 'dark';
   const theme = isDark ? colors.dark : colors.light;
   const router = useRouter();
+  const { signOut, user } = useAuth();
 
   const [language, setLanguage] = useState<'de' | 'en'>('de');
   const [darkModeEnabled, setDarkModeEnabled] = useState(isDark);
@@ -119,11 +121,20 @@ export default function SettingsScreen() {
           onPress: async () => {
             console.log('SettingsScreen: Logging out');
             try {
+              // Sign out from Better Auth
+              await signOut();
+              // Clear onboarding flag
               await AsyncStorage.removeItem('smoke-onboarding-completed');
               console.log('SettingsScreen: Logged out, redirecting to onboarding');
               router.replace('/onboarding');
             } catch (error) {
               console.error('SettingsScreen: Error logging out:', error);
+              Alert.alert(
+                language === 'de' ? 'Fehler' : 'Error',
+                language === 'de' 
+                  ? 'Fehler beim Abmelden. Bitte versuchen Sie es erneut.'
+                  : 'Error signing out. Please try again.'
+              );
             }
           },
         },
@@ -231,6 +242,29 @@ export default function SettingsScreen() {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
+          {user && (
+            <Animated.View entering={FadeIn.duration(400)} style={styles.section}>
+              <View style={[styles.card, { backgroundColor: theme.card }]}>
+                <View style={styles.userInfo}>
+                  <IconSymbol
+                    ios_icon_name="person.circle.fill"
+                    android_material_icon_name="account-circle"
+                    size={48}
+                    color={theme.primary}
+                  />
+                  <View style={styles.userDetails}>
+                    <Text style={[styles.userName, { color: theme.text }]}>
+                      {user.name || 'User'}
+                    </Text>
+                    <Text style={[styles.userEmail, { color: theme.textSecondary }]}>
+                      {user.email || 'Signed in with Apple'}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            </Animated.View>
+          )}
+          
           <Animated.View entering={FadeIn.duration(400)} style={styles.section}>
             <View style={[styles.card, { backgroundColor: theme.card }]}>
               <View style={styles.cardHeader}>
@@ -599,5 +633,22 @@ const styles = StyleSheet.create({
   modalText: {
     fontSize: 14,
     lineHeight: 22,
+  },
+  userInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+  },
+  userDetails: {
+    flex: 1,
+  },
+  userName: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  userEmail: {
+    fontSize: 14,
+    fontWeight: '500',
   },
 });
