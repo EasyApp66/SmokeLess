@@ -8,6 +8,13 @@
       "when": 1769187922712,
       "tag": "20260123170522_fair_violations",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1769196683415,
+      "tag": "20260123193123_slippery_lightspeed",
+      "breakpoints": true
     }
   ]
 }
