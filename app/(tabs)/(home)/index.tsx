@@ -358,15 +358,17 @@ export default function HomeScreen() {
             entering={FadeInDown.delay(200).duration(600)}
             style={[styles.counterCard, { backgroundColor: theme.card }]}
           >
-            <Text style={[styles.counterNumber, { color: theme.text }]}>
-              {completedCount}
-            </Text>
-            <Text style={[styles.counterNumber, { color: theme.textSecondary }]}>
-              {' / '}
-            </Text>
-            <Text style={[styles.counterNumber, { color: theme.text }]}>
-              {totalCount}
-            </Text>
+            <View style={styles.counterRow}>
+              <Text style={[styles.counterNumber, { color: theme.text }]}>
+                {completedCount}
+              </Text>
+              <Text style={[styles.counterNumber, { color: theme.textSecondary }]}>
+                {' / '}
+              </Text>
+              <Text style={[styles.counterNumber, { color: theme.text }]}>
+                {totalCount}
+              </Text>
+            </View>
             <Text style={[styles.counterStatus, { color: theme.textSecondary }]}>
               {statusText}
             </Text>
@@ -708,6 +710,10 @@ const styles = StyleSheet.create({
     padding: 24,
     alignItems: 'center',
     marginBottom: 20,
+  },
+  counterRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   counterNumber: {
     fontSize: 48,
