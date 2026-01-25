@@ -41,6 +41,7 @@ export default function SettingsScreen() {
   const [darkModeEnabled, setDarkModeEnabled] = useState(isDark);
   const [showLegalModal, setShowLegalModal] = useState(false);
   const [applyToAllDays, setApplyToAllDays] = useState(false);
+  const [showSetupModal, setShowSetupModal] = useState(false);
 
   useEffect(() => {
     loadSettings();
@@ -105,7 +106,7 @@ export default function SettingsScreen() {
             console.log('SettingsScreen: Deleting all data');
             try {
               await AsyncStorage.clear();
-              console.log('SettingsScreen: Data deleted, redirecting to onboarding');
+              console.log('SettingsScreen: Data deleted, redirecting to welcome');
               router.replace('/onboarding');
             } catch (error) {
               console.error('SettingsScreen: Error deleting data:', error);
@@ -135,7 +136,7 @@ export default function SettingsScreen() {
             console.log('SettingsScreen: Logging out');
             try {
               await AsyncStorage.removeItem('smoke-onboarding-completed');
-              console.log('SettingsScreen: Logged out, redirecting to onboarding');
+              console.log('SettingsScreen: Logged out, redirecting to welcome');
               router.replace('/onboarding');
             } catch (error) {
               console.error('SettingsScreen: Error logging out:', error);
@@ -156,6 +157,8 @@ export default function SettingsScreen() {
       title: 'Einstellungen',
       schedule: 'Zeitplan für alle Tage',
       scheduleDesc: 'Änderungen auf alle Tage anwenden',
+      setupDay: 'Morgen einrichten',
+      setupDayDesc: 'Zeiten und Ziel für alle Tage festlegen',
       display: 'Darstellung',
       darkMode: 'Dunkelmodus',
       language: 'Sprache',
@@ -174,6 +177,8 @@ export default function SettingsScreen() {
       title: 'Settings',
       schedule: 'Schedule for all days',
       scheduleDesc: 'Apply changes to all days',
+      setupDay: 'Setup Tomorrow',
+      setupDayDesc: 'Set times and goal for all days',
       display: 'Display',
       darkMode: 'Dark Mode',
       language: 'Language',
@@ -225,6 +230,35 @@ export default function SettingsScreen() {
                 />
               </View>
             </View>
+
+            <TouchableOpacity
+              style={[styles.setupDayCard, { backgroundColor: theme.card }]}
+              onPress={() => {
+                console.log('SettingsScreen: User tapped setup day');
+                setShowSetupModal(true);
+              }}
+            >
+              <IconSymbol
+                ios_icon_name="calendar"
+                android_material_icon_name="calendar-today"
+                size={24}
+                color={theme.primary}
+              />
+              <View style={styles.setupDayTextContainer}>
+                <Text style={[styles.setupDayTitle, { color: theme.text }]}>
+                  {t.setupDay}
+                </Text>
+                <Text style={[styles.setupDayDescription, { color: theme.textSecondary }]}>
+                  {t.setupDayDesc}
+                </Text>
+              </View>
+              <IconSymbol
+                ios_icon_name="chevron.right"
+                android_material_icon_name="chevron-right"
+                size={20}
+                color={theme.textSecondary}
+              />
+            </TouchableOpacity>
           </Animated.View>
 
           <Animated.View entering={FadeInDown.delay(100).duration(400)} style={styles.section}>
@@ -409,6 +443,36 @@ export default function SettingsScreen() {
           </ScrollView>
         </SafeAreaView>
       </Modal>
+
+      <Modal
+        visible={showSetupModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowSetupModal(false)}
+      >
+        <SafeAreaView style={[styles.modalContainer, { backgroundColor: theme.background }]}>
+          <View style={[styles.modalHeader, { borderBottomColor: theme.border }]}>
+            <Text style={[styles.modalTitle, { color: theme.text }]}>
+              {language === 'de' ? 'Morgen einrichten' : 'Setup Tomorrow'}
+            </Text>
+            <TouchableOpacity onPress={() => setShowSetupModal(false)} style={styles.closeButton}>
+              <IconSymbol
+                ios_icon_name="xmark"
+                android_material_icon_name="close"
+                size={24}
+                color={theme.text}
+              />
+            </TouchableOpacity>
+          </View>
+          <View style={styles.modalContent}>
+            <Text style={[styles.setupModalText, { color: theme.textSecondary }]}>
+              {language === 'de'
+                ? 'Diese Funktion ermöglicht es Ihnen, Zeiten und Ziele für alle Tage gleichzeitig festzulegen. Bald verfügbar!'
+                : 'This feature allows you to set times and goals for all days at once. Coming soon!'}
+            </Text>
+          </View>
+        </SafeAreaView>
+      </Modal>
     </View>
   );
 }
@@ -467,6 +531,25 @@ const styles = StyleSheet.create({
   },
   cardDescription: {
     fontSize: 14,
+  },
+  setupDayCard: {
+    borderRadius: 16,
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginTop: 12,
+  },
+  setupDayTextContainer: {
+    flex: 1,
+  },
+  setupDayTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 2,
+  },
+  setupDayDescription: {
+    fontSize: 13,
   },
   settingRow: {
     flexDirection: 'row',
@@ -587,5 +670,11 @@ const styles = StyleSheet.create({
   legalSectionText: {
     fontSize: 14,
     lineHeight: 22,
+  },
+  setupModalText: {
+    fontSize: 16,
+    lineHeight: 24,
+    padding: 20,
+    textAlign: 'center',
   },
 });

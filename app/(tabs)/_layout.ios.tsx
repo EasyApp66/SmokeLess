@@ -16,7 +16,7 @@ export default function TabLayout() {
     {
       name: 'profile',
       route: '/(tabs)/profile',
-      icon: 'bar-chart',
+      icon: 'insert-chart',
       label: 'Statistik',
     },
     {

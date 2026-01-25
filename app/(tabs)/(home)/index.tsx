@@ -48,7 +48,6 @@ export default function HomeScreen() {
   const systemColorScheme = useColorScheme();
   const [manualDarkMode, setManualDarkMode] = useState<boolean | null>(null);
   
-  // Load manual dark mode setting
   useEffect(() => {
     const loadDarkModeSetting = async () => {
       const saved = await AsyncStorage.getItem('app-dark-mode');
@@ -80,18 +79,7 @@ export default function HomeScreen() {
     return () => clearInterval(timer);
   }, []);
 
-  useEffect(() => {
-    loadDayData();
-  }, [selectedDate]);
-
-  const formatDate = (date: Date): string => {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  };
-
-  const loadDayData = async () => {
+  const loadDayData = useCallback(async () => {
     console.log('HomeScreen: Loading day data for', formatDate(selectedDate));
     setLoading(true);
     setError(null);
@@ -124,6 +112,17 @@ export default function HomeScreen() {
     } finally {
       setLoading(false);
     }
+  }, [selectedDate]);
+
+  useEffect(() => {
+    loadDayData();
+  }, [loadDayData]);
+
+  const formatDate = (date: Date): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   };
 
   const setupDay = async () => {
@@ -378,9 +377,6 @@ export default function HomeScreen() {
                 <View style={styles.setupHeaderText}>
                   <Text style={[styles.setupTitle, { color: theme.text }]}>
                     Morgen einrichten
-                  </Text>
-                  <Text style={[styles.setupDescription, { color: theme.textSecondary }]}>
-                    Lege deine Zeiten und dein Ziel fest
                   </Text>
                 </View>
               </View>
@@ -681,16 +677,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   counterNumber: {
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: '900',
   },
   counterSeparator: {
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: '900',
     marginHorizontal: 4,
   },
   counterStatus: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '600',
     marginTop: 4,
   },
@@ -711,11 +707,6 @@ const styles = StyleSheet.create({
   setupTitle: {
     fontSize: 20,
     fontWeight: '700',
-    marginBottom: 4,
-  },
-  setupDescription: {
-    fontSize: 14,
-    fontWeight: '500',
   },
   setupInputs: {
     gap: 20,
