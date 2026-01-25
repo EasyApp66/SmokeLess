@@ -23,7 +23,8 @@ import Animated, {
 } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { authClient } from '@/lib/auth';
+import * as Application from 'expo-application';
+import * as Device from 'expo-device';
 
 const { width, height } = Dimensions.get('window');
 
@@ -91,32 +92,52 @@ export default function OnboardingScreen() {
   });
 
   const [showLegalModal, setShowLegalModal] = React.useState(false);
-  const [isSigningIn, setIsSigningIn] = React.useState(false);
+  const [isStarting, setIsStarting] = React.useState(false);
+
+  const generateDeviceId = async () => {
+    console.log('OnboardingScreen: Generating unique device ID');
+    try {
+      let deviceId = await AsyncStorage.getItem('smoke-device-id');
+      
+      if (!deviceId) {
+        const androidId = Application.getAndroidId();
+        const deviceName = Device.modelName || 'unknown';
+        const timestamp = Date.now();
+        const randomPart = Math.random().toString(36).substr(2, 9);
+        
+        deviceId = `${androidId || deviceName}-${timestamp}-${randomPart}`;
+        
+        await AsyncStorage.setItem('smoke-device-id', deviceId);
+        console.log('OnboardingScreen: Generated and stored device ID:', deviceId);
+      } else {
+        console.log('OnboardingScreen: Using existing device ID:', deviceId);
+      }
+      
+      return deviceId;
+    } catch (error) {
+      console.error('OnboardingScreen: Error generating device ID:', error);
+      const fallbackId = `device-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      await AsyncStorage.setItem('smoke-device-id', fallbackId);
+      return fallbackId;
+    }
+  };
 
   const handleStart = async () => {
-    console.log('OnboardingScreen: User tapped "Los geht\'s" button');
-    setIsSigningIn(true);
+    console.log('OnboardingScreen: User tapped "GO" button');
+    setIsStarting(true);
+    
     try {
-      await authClient.signIn.social({
-        provider: 'apple',
-        callbackURL: '/(tabs)/(home)/',
-      });
-      
-      console.log('OnboardingScreen: Apple Sign-In successful via Better Auth');
+      await generateDeviceId();
       
       await AsyncStorage.setItem('smoke-onboarding-completed', 'true');
-      console.log('OnboardingScreen: User authenticated, navigating to home');
+      console.log('OnboardingScreen: Onboarding completed, navigating to home');
+      
       router.replace('/(tabs)/(home)/');
-    } catch (error: any) {
-      console.error('OnboardingScreen: Apple Sign-In error:', error);
-      if (error.code === 'ERR_REQUEST_CANCELED' || error.message?.includes('cancel')) {
-        console.log('OnboardingScreen: User canceled Apple Sign-In');
-      } else {
-        await AsyncStorage.setItem('smoke-onboarding-completed', 'true');
-        router.replace('/(tabs)/(home)/');
-      }
+    } catch (error) {
+      console.error('OnboardingScreen: Error during onboarding:', error);
+      router.replace('/(tabs)/(home)/');
     } finally {
-      setIsSigningIn(false);
+      setIsStarting(false);
     }
   };
 
@@ -125,17 +146,17 @@ export default function OnboardingScreen() {
     setShowLegalModal(true);
   };
 
-  const titleLine1 = 'Be Smart';
-  const titleLine2 = 'Smoke Less';
+  const titleLine1 = 'BE SMART';
+  const titleLine2 = 'SMOKE LESS';
   const descLine1 = 'Lege deine Wach-Zeiten fest';
   const descLine2 = 'Wähle dein Tagesziel';
-  const descLine3 = 'Erhalte Sanfte Erinnerungen';
+  const descLine3 = 'Erhalte sanfte Erinnerungen';
 
   return (
     <>
       <Stack.Screen options={{ headerShown: false }} />
       <LinearGradient
-        colors={['rgb(29, 200, 130)', 'rgb(51, 204, 153)', 'rgb(174, 217, 38)']}
+        colors={['rgb(15, 105, 65)', 'rgb(25, 120, 80)', 'rgb(90, 135, 25)']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         style={styles.gradient}
@@ -161,12 +182,12 @@ export default function OnboardingScreen() {
                 style={styles.startButton}
                 onPress={handleStart}
                 activeOpacity={0.8}
-                disabled={isSigningIn}
+                disabled={isStarting}
               >
-                {isSigningIn ? (
-                  <ActivityIndicator color="rgb(29, 200, 130)" />
+                {isStarting ? (
+                  <ActivityIndicator color="rgb(15, 105, 65)" />
                 ) : (
-                  <Text style={styles.startButtonText}>Los geht&apos;s</Text>
+                  <Text style={styles.startButtonText}>GO</Text>
                 )}
               </TouchableOpacity>
 
@@ -291,7 +312,7 @@ const styles = StyleSheet.create({
     width: 300,
     height: 300,
     borderRadius: 150,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
   },
   orb2: {
     position: 'absolute',
@@ -300,14 +321,14 @@ const styles = StyleSheet.create({
     width: 400,
     height: 400,
     borderRadius: 200,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
   },
   titleContainer: {
     alignItems: 'flex-start',
     marginTop: 20,
   },
   title: {
-    fontSize: 56,
+    fontSize: 59,
     fontWeight: '900',
     color: '#FFFFFF',
     textAlign: 'left',
@@ -318,8 +339,8 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   description: {
-    fontSize: 18,
-    fontWeight: '500',
+    fontSize: 15,
+    fontWeight: '900',
     color: 'rgba(255, 255, 255, 0.95)',
     textAlign: 'left',
     lineHeight: 28,
@@ -345,7 +366,7 @@ const styles = StyleSheet.create({
   startButtonText: {
     fontSize: 20,
     fontWeight: '700',
-    color: 'rgb(29, 200, 130)',
+    color: 'rgb(15, 105, 65)',
   },
   legalText: {
     fontSize: 14,
