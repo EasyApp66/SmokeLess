@@ -21,8 +21,20 @@ import { useAuth } from '@/contexts/AuthContext';
 
 export default function SettingsScreen() {
   console.log('SettingsScreen: Rendering settings screen');
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const systemColorScheme = useColorScheme();
+  const [manualDarkMode, setManualDarkMode] = useState<boolean | null>(null);
+  
+  useEffect(() => {
+    const loadDarkModeSetting = async () => {
+      const saved = await AsyncStorage.getItem('app-dark-mode');
+      if (saved !== null) {
+        setManualDarkMode(saved === 'true');
+      }
+    };
+    loadDarkModeSetting();
+  }, []);
+
+  const isDark = manualDarkMode !== null ? manualDarkMode : systemColorScheme === 'dark';
   const theme = isDark ? colors.dark : colors.light;
   const router = useRouter();
   const { signOut, user } = useAuth();
@@ -30,7 +42,7 @@ export default function SettingsScreen() {
   const [language, setLanguage] = useState<'de' | 'en'>('de');
   const [darkModeEnabled, setDarkModeEnabled] = useState(isDark);
   const [showLegalModal, setShowLegalModal] = useState(false);
-  const [legalContent, setLegalContent] = useState<'agb' | 'privacy' | 'terms' | null>(null);
+  const [applyToAllDays, setApplyToAllDays] = useState(false);
 
   useEffect(() => {
     loadSettings();
@@ -68,6 +80,10 @@ export default function SettingsScreen() {
     setDarkModeEnabled(value);
     try {
       await AsyncStorage.setItem('app-dark-mode', value.toString());
+      // Force reload to apply theme
+      setTimeout(() => {
+        router.replace('/(tabs)/settings');
+      }, 100);
     } catch (error) {
       console.error('SettingsScreen: Error saving dark mode:', error);
     }
@@ -121,9 +137,7 @@ export default function SettingsScreen() {
           onPress: async () => {
             console.log('SettingsScreen: Logging out');
             try {
-              // Sign out from Better Auth
               await signOut();
-              // Clear onboarding flag
               await AsyncStorage.removeItem('smoke-onboarding-completed');
               console.log('SettingsScreen: Logged out, redirecting to onboarding');
               router.replace('/onboarding');
@@ -142,35 +156,9 @@ export default function SettingsScreen() {
     );
   };
 
-  const openLegalModal = (type: 'agb' | 'privacy' | 'terms') => {
-    console.log('SettingsScreen: Opening legal modal:', type);
-    setLegalContent(type);
+  const openLegalModal = () => {
+    console.log('SettingsScreen: Opening legal modal');
     setShowLegalModal(true);
-  };
-
-  const getLegalContent = () => {
-    if (legalContent === 'agb') {
-      return {
-        title: language === 'de' ? 'AGB' : 'Terms of Use',
-        content: language === 'de'
-          ? 'Willkommen bei Smoke on Smoke Less. Durch die Nutzung dieser Anwendung stimmen Sie den folgenden Bedingungen zu:\n\n1. Diese App soll Ihnen helfen, das Rauchen schrittweise durch geplante Erinnerungen zu reduzieren.\n2. Sie sind dafür verantwortlich, Ihre eigenen Ziele zu setzen und den Erinnerungen zu folgen.\n3. Die App bietet keine medizinische Beratung. Konsultieren Sie einen Arzt für medizinische Beratung.\n4. Wir behalten uns das Recht vor, diese Bedingungen jederzeit zu aktualisieren.\n5. Sie müssen mindestens 18 Jahre alt sein, um diese App zu nutzen.\n6. Die App wird "wie besehen" ohne jegliche Garantien bereitgestellt.\n\nDurch die weitere Nutzung der App akzeptieren Sie diese Bedingungen vollständig.'
-          : 'Welcome to Smoke on Smoke Less. By using this application, you agree to the following terms:\n\n1. This app is designed to help you reduce smoking gradually through scheduled reminders.\n2. You are responsible for setting your own goals and following the reminders.\n3. The app does not provide medical advice. Consult a healthcare professional for medical guidance.\n4. We reserve the right to update these terms at any time.\n5. You must be 18 years or older to use this app.\n6. The app is provided "as is" without warranties of any kind.\n\nBy continuing to use the app, you accept these terms in full.',
-      };
-    } else if (legalContent === 'privacy') {
-      return {
-        title: language === 'de' ? 'Datenschutzerklärung' : 'Privacy Policy',
-        content: language === 'de'
-          ? 'Ihre Privatsphäre ist uns wichtig. Diese Datenschutzerklärung erklärt, welche Daten wir sammeln und wie wir sie verwenden:\n\nDatenerfassung:\n• Wir erfassen nur Ihre Benutzer-ID für die App-Funktionalität\n• Wir erfassen NICHT Ihren Namen, E-Mail, Telefonnummer, Standort oder andere persönliche Daten\n• Wir können allgemeine Nutzerverhaltensmuster nur in anonymisierter oder aggregierter Form beobachten und analysieren\n\nDatennutzung:\n• Ihre Benutzer-ID wird ausschließlich zur Speicherung Ihres Rauchreduktionsplans und Fortschritts verwendet\n• Anonymisierte Nutzungsdaten können zur Verbesserung der App-Erfahrung verwendet werden\n• Wir teilen Ihre Daten NICHT mit Dritten\n• Wir verkaufen Ihre Daten NICHT\n\nDatensicherheit:\n• Ihre Daten werden sicher gespeichert\n• Sie können alle Ihre Daten jederzeit über den Einstellungsbildschirm löschen\n\nIhre Rechte:\n• Sie haben das Recht auf Zugriff auf Ihre Daten\n• Sie haben das Recht, Ihre Daten zu löschen\n• Sie haben das Recht, Ihre Einwilligung jederzeit zu widerrufen\n\nFür Fragen zu Ihrer Privatsphäre kontaktieren Sie uns unter: ivanmirosnic006@gmail.com'
-          : 'Your privacy is important to us. This Privacy Policy explains what data we collect and how we use it:\n\nData Collection:\n• We collect only your user ID for app functionality\n• We do NOT collect your name, email, phone number, location, or any other personal data\n• We may observe and analyze general user behavior patterns in anonymized or aggregated form only\n\nData Usage:\n• Your user ID is used solely to store your smoking reduction schedule and progress\n• Anonymized usage data may be used to improve the app experience\n• We do NOT share your data with third parties\n• We do NOT sell your data\n\nData Security:\n• Your data is stored securely\n• You can delete all your data at any time from the Settings screen\n\nYour Rights:\n• You have the right to access your data\n• You have the right to delete your data\n• You have the right to withdraw consent at any time\n\nFor questions about your privacy, contact us at: ivanmirosnic006@gmail.com',
-      };
-    } else {
-      return {
-        title: language === 'de' ? 'Nutzungsbedingungen' : 'Terms of Use',
-        content: language === 'de'
-          ? 'Verantwortliche Person / Eigentümer:\nIvan Mirosnic (auch bekannt als Nugat / Ivan Mirosnic Nugat)\n\nAdresse:\nAhornstrasse\n8600 Dübendorf\nSchweiz\n\nKontakt:\nE-Mail: ivanmirosnic006@gmail.com\n\nGerichtsbarkeit:\nDiese App wird nach Schweizer Recht betrieben. Alle Streitigkeiten werden unter der Gerichtsbarkeit der Schweizer Gerichte gelöst.\n\nHaftungsausschluss:\nDer Inhalt dieser App dient nur zu Informationszwecken. Wir geben keine Zusicherungen oder Garantien jeglicher Art hinsichtlich der Richtigkeit, Vollständigkeit oder Eignung der bereitgestellten Informationen. Die Nutzung dieser App erfolgt auf eigenes Risiko.'
-          : 'Responsible Person / Owner:\nIvan Mirosnic (also known as Nugat / Ivan Mirosnic Nugat)\n\nAddress:\nAhornstrasse\n8600 Dübendorf\nSwitzerland\n\nContact:\nEmail: ivanmirosnic006@gmail.com\n\nJurisdiction:\nThis app is operated under Swiss law. Any disputes shall be resolved under the jurisdiction of Swiss courts.\n\nDisclaimer:\nThe content of this app is provided for informational purposes only. We make no representations or warranties of any kind regarding the accuracy, completeness, or suitability of the information provided. Use of this app is at your own risk.',
-      };
-    }
   };
 
   const texts = {
@@ -179,7 +167,7 @@ export default function SettingsScreen() {
       schedule: 'Zeitplan für alle Tage',
       scheduleDesc: 'Änderungen auf alle Tage anwenden',
       display: 'Darstellung',
-      darkMode: 'Hellmodus',
+      darkMode: 'Dunkelmodus',
       language: 'Sprache',
       german: 'Deutsch',
       active: 'Aktiv',
@@ -190,9 +178,6 @@ export default function SettingsScreen() {
       subscribePrice: '1 CHF / Monat • Eigene Themes, Statistiken & mehr',
       signOut: 'Abmelden',
       legal: 'Rechtliches',
-      agb: 'AGB',
-      privacy: 'Datenschutzerklärung',
-      terms: 'Nutzungsbedingungen',
       deleteData: 'Alle Daten löschen',
     },
     en: {
@@ -200,7 +185,7 @@ export default function SettingsScreen() {
       schedule: 'Schedule for all days',
       scheduleDesc: 'Apply changes to all days',
       display: 'Display',
-      darkMode: 'Light Mode',
+      darkMode: 'Dark Mode',
       language: 'Language',
       german: 'German',
       active: 'Active',
@@ -211,9 +196,6 @@ export default function SettingsScreen() {
       subscribePrice: '1 CHF / Month • Custom themes, statistics & more',
       signOut: 'Sign Out',
       legal: 'Legal',
-      agb: 'Terms of Use',
-      privacy: 'Privacy Policy',
-      terms: 'Terms and Conditions',
       deleteData: 'Delete All Data',
     },
   };
@@ -227,14 +209,6 @@ export default function SettingsScreen() {
           <Text style={[styles.headerTitle, { color: theme.text }]}>
             {t.title}
           </Text>
-          <TouchableOpacity onPress={handleLogout}>
-            <IconSymbol
-              ios_icon_name="xmark.circle"
-              android_material_icon_name="close"
-              size={28}
-              color={theme.text}
-            />
-          </TouchableOpacity>
         </View>
 
         <ScrollView
@@ -267,20 +241,22 @@ export default function SettingsScreen() {
           
           <Animated.View entering={FadeIn.duration(400)} style={styles.section}>
             <View style={[styles.card, { backgroundColor: theme.card }]}>
-              <View style={styles.cardHeader}>
-                <Text style={[styles.cardTitle, { color: theme.text }]}>
-                  {t.schedule}
-                </Text>
+              <View style={styles.scheduleHeader}>
+                <View style={styles.scheduleTextContainer}>
+                  <Text style={[styles.cardTitle, { color: theme.text }]}>
+                    {t.schedule}
+                  </Text>
+                  <Text style={[styles.cardDescription, { color: theme.textSecondary }]}>
+                    {t.scheduleDesc}
+                  </Text>
+                </View>
+                <Switch
+                  value={applyToAllDays}
+                  onValueChange={setApplyToAllDays}
+                  trackColor={{ false: theme.border, true: theme.primary }}
+                  thumbColor="#FFFFFF"
+                />
               </View>
-              <Text style={[styles.cardDescription, { color: theme.textSecondary }]}>
-                {t.scheduleDesc}
-              </Text>
-              <Switch
-                value={false}
-                onValueChange={() => {}}
-                trackColor={{ false: theme.border, true: theme.primary }}
-                thumbColor="#FFFFFF"
-              />
             </View>
           </Animated.View>
 
@@ -373,43 +349,12 @@ export default function SettingsScreen() {
           </Animated.View>
 
           <Animated.View entering={FadeInDown.delay(400).duration(400)} style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>
-              {t.legal}
-            </Text>
             <TouchableOpacity
               style={[styles.legalRow, { borderBottomColor: theme.border }]}
-              onPress={() => openLegalModal('agb')}
+              onPress={openLegalModal}
             >
               <Text style={[styles.legalText, { color: theme.text }]}>
-                {t.agb}
-              </Text>
-              <IconSymbol
-                ios_icon_name="chevron.right"
-                android_material_icon_name="chevron-right"
-                size={20}
-                color={theme.textSecondary}
-              />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.legalRow, { borderBottomColor: theme.border }]}
-              onPress={() => openLegalModal('privacy')}
-            >
-              <Text style={[styles.legalText, { color: theme.text }]}>
-                {t.privacy}
-              </Text>
-              <IconSymbol
-                ios_icon_name="chevron.right"
-                android_material_icon_name="chevron-right"
-                size={20}
-                color={theme.textSecondary}
-              />
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.legalRow}
-              onPress={() => openLegalModal('terms')}
-            >
-              <Text style={[styles.legalText, { color: theme.text }]}>
-                {t.terms}
+                {t.legal}
               </Text>
               <IconSymbol
                 ios_icon_name="chevron.right"
@@ -450,7 +395,7 @@ export default function SettingsScreen() {
         <SafeAreaView style={[styles.modalContainer, { backgroundColor: theme.background }]}>
           <View style={[styles.modalHeader, { borderBottomColor: theme.border }]}>
             <Text style={[styles.modalTitle, { color: theme.text }]}>
-              {legalContent && getLegalContent().title}
+              {language === 'de' ? 'Rechtliches' : 'Legal'}
             </Text>
             <TouchableOpacity onPress={() => setShowLegalModal(false)} style={styles.closeButton}>
               <IconSymbol
@@ -462,9 +407,38 @@ export default function SettingsScreen() {
             </TouchableOpacity>
           </View>
           <ScrollView style={styles.modalContent} contentContainerStyle={styles.modalContentContainer}>
-            <Text style={[styles.modalText, { color: theme.text }]}>
-              {legalContent && getLegalContent().content}
-            </Text>
+            <View style={styles.legalSection}>
+              <Text style={[styles.legalSectionTitle, { color: theme.text }]}>
+                {language === 'de' ? 'AGB / Nutzungsbedingungen' : 'Terms of Use'}
+              </Text>
+              <Text style={[styles.legalSectionText, { color: theme.textSecondary }]}>
+                {language === 'de'
+                  ? 'Willkommen bei Smoke on Smoke Less. Durch die Nutzung dieser Anwendung stimmen Sie den folgenden Bedingungen zu:\n\n1. Diese App soll Ihnen helfen, das Rauchen schrittweise durch geplante Erinnerungen zu reduzieren.\n2. Sie sind dafür verantwortlich, Ihre eigenen Ziele zu setzen und den Erinnerungen zu folgen.\n3. Die App bietet keine medizinische Beratung. Konsultieren Sie einen Arzt für medizinische Beratung.\n4. Wir behalten uns das Recht vor, diese Bedingungen jederzeit zu aktualisieren.\n5. Sie müssen mindestens 18 Jahre alt sein, um diese App zu nutzen.\n6. Die App wird "wie besehen" ohne jegliche Garantien bereitgestellt.\n\nDurch die weitere Nutzung der App akzeptieren Sie diese Bedingungen vollständig.'
+                  : 'Welcome to Smoke on Smoke Less. By using this application, you agree to the following terms:\n\n1. This app is designed to help you reduce smoking gradually through scheduled reminders.\n2. You are responsible for setting your own goals and following the reminders.\n3. The app does not provide medical advice. Consult a healthcare professional for medical guidance.\n4. We reserve the right to update these terms at any time.\n5. You must be 18 years or older to use this app.\n6. The app is provided "as is" without warranties of any kind.\n\nBy continuing to use the app, you accept these terms in full.'}
+              </Text>
+            </View>
+
+            <View style={styles.legalSection}>
+              <Text style={[styles.legalSectionTitle, { color: theme.text }]}>
+                {language === 'de' ? 'Datenschutzerklärung' : 'Privacy Policy'}
+              </Text>
+              <Text style={[styles.legalSectionText, { color: theme.textSecondary }]}>
+                {language === 'de'
+                  ? 'Ihre Privatsphäre ist uns wichtig. Diese Datenschutzerklärung erklärt, welche Daten wir sammeln und wie wir sie verwenden:\n\nDatenerfassung:\n• Wir erfassen nur Ihre Benutzer-ID für die App-Funktionalität\n• Wir erfassen NICHT Ihren Namen, E-Mail, Telefonnummer, Standort oder andere persönliche Daten\n• Wir können allgemeine Nutzerverhaltensmuster nur in anonymisierter oder aggregierter Form beobachten und analysieren\n\nDatennutzung:\n• Ihre Benutzer-ID wird ausschließlich zur Speicherung Ihres Rauchreduktionsplans und Fortschritts verwendet\n• Anonymisierte Nutzungsdaten können zur Verbesserung der App-Erfahrung verwendet werden\n• Wir teilen Ihre Daten NICHT mit Dritten\n• Wir verkaufen Ihre Daten NICHT\n\nDatensicherheit:\n• Ihre Daten werden sicher gespeichert\n• Sie können alle Ihre Daten jederzeit über den Einstellungsbildschirm löschen\n\nIhre Rechte:\n• Sie haben das Recht auf Zugriff auf Ihre Daten\n• Sie haben das Recht, Ihre Daten zu löschen\n• Sie haben das Recht, Ihre Einwilligung jederzeit zu widerrufen\n\nFür Fragen zu Ihrer Privatsphäre kontaktieren Sie uns unter: ivanmirosnic006@gmail.com'
+                  : 'Your privacy is important to us. This Privacy Policy explains what data we collect and how we use it:\n\nData Collection:\n• We collect only your user ID for app functionality\n• We do NOT collect your name, email, phone number, location, or any other personal data\n• We may observe and analyze general user behavior patterns in anonymized or aggregated form only\n\nData Usage:\n• Your user ID is used solely to store your smoking reduction schedule and progress\n• Anonymized usage data may be used to improve the app experience\n• We do NOT share your data with third parties\n• We do NOT sell your data\n\nData Security:\n• Your data is stored securely\n• You can delete all your data at any time from the Settings screen\n\nYour Rights:\n• You have the right to access your data\n• You have the right to delete your data\n• You have the right to withdraw consent at any time\n\nFor questions about your privacy, contact us at: ivanmirosnic006@gmail.com'}
+              </Text>
+            </View>
+
+            <View style={styles.legalSection}>
+              <Text style={[styles.legalSectionTitle, { color: theme.text }]}>
+                {language === 'de' ? 'Impressum' : 'Imprint'}
+              </Text>
+              <Text style={[styles.legalSectionText, { color: theme.textSecondary }]}>
+                {language === 'de'
+                  ? 'Verantwortliche Person / Eigentümer:\nIvan Mirosnic (auch bekannt als Nugat / Ivan Mirosnic Nugat)\n\nAdresse:\nAhornstrasse\n8600 Dübendorf\nSchweiz\n\nKontakt:\nE-Mail: ivanmirosnic006@gmail.com\n\nGerichtsbarkeit:\nDiese App wird nach Schweizer Recht betrieben. Alle Streitigkeiten werden unter der Gerichtsbarkeit der Schweizer Gerichte gelöst.\n\nHaftungsausschluss:\nDer Inhalt dieser App dient nur zu Informationszwecken. Wir geben keine Zusicherungen oder Garantien jeglicher Art hinsichtlich der Richtigkeit, Vollständigkeit oder Eignung der bereitgestellten Informationen. Die Nutzung dieser App erfolgt auf eigenes Risiko.'
+                  : 'Responsible Person / Owner:\nIvan Mirosnic (also known as Nugat / Ivan Mirosnic Nugat)\n\nAddress:\nAhornstrasse\n8600 Dübendorf\nSwitzerland\n\nContact:\nEmail: ivanmirosnic006@gmail.com\n\nJurisdiction:\nThis app is operated under Swiss law. Any disputes shall be resolved under the jurisdiction of Swiss courts.\n\nDisclaimer:\nThe content of this app is provided for informational purposes only. We make no representations or warranties of any kind regarding the accuracy, completeness, or suitability of the information provided. Use of this app is at your own risk.'}
+              </Text>
+            </View>
           </ScrollView>
         </SafeAreaView>
       </Modal>
@@ -510,16 +484,22 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 16,
   },
-  cardHeader: {
-    marginBottom: 8,
+  scheduleHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  scheduleTextContainer: {
+    flex: 1,
+    marginRight: 12,
   },
   cardTitle: {
     fontSize: 16,
     fontWeight: '600',
+    marginBottom: 4,
   },
   cardDescription: {
     fontSize: 14,
-    marginBottom: 12,
   },
   settingRow: {
     flexDirection: 'row',
@@ -584,7 +564,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingVertical: 16,
-    borderBottomWidth: 1,
   },
   legalText: {
     fontSize: 16,
@@ -630,7 +609,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 20,
   },
-  modalText: {
+  legalSection: {
+    marginBottom: 32,
+  },
+  legalSectionTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 12,
+  },
+  legalSectionText: {
     fontSize: 14,
     lineHeight: 22,
   },

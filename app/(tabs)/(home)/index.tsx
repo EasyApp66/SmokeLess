@@ -28,6 +28,7 @@ import * as Haptics from 'expo-haptics';
 import { colors } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
 import { dayApi, reminderApi, Day, Reminder } from '@/utils/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width } = Dimensions.get('window');
 
@@ -44,8 +45,21 @@ const WEEKDAYS = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
 
 export default function HomeScreen() {
   console.log('HomeScreen: Rendering home screen');
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const systemColorScheme = useColorScheme();
+  const [manualDarkMode, setManualDarkMode] = useState<boolean | null>(null);
+  
+  // Load manual dark mode setting
+  useEffect(() => {
+    const loadDarkModeSetting = async () => {
+      const saved = await AsyncStorage.getItem('app-dark-mode');
+      if (saved !== null) {
+        setManualDarkMode(saved === 'true');
+      }
+    };
+    loadDarkModeSetting();
+  }, []);
+
+  const isDark = manualDarkMode !== null ? manualDarkMode : systemColorScheme === 'dark';
   const theme = isDark ? colors.dark : colors.light;
 
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -59,17 +73,6 @@ export default function HomeScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const orbRotate = useSharedValue(0);
-
-  useEffect(() => {
-    console.log('HomeScreen: Starting background orb rotation animation');
-    orbRotate.value = withRepeat(
-      withTiming(360, { duration: 120000, easing: Easing.linear }),
-      -1,
-      false
-    );
-  }, []);
-
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTime(new Date());
@@ -80,12 +83,6 @@ export default function HomeScreen() {
   useEffect(() => {
     loadDayData();
   }, [selectedDate]);
-
-  const orbStyle = useAnimatedStyle(() => {
-    return {
-      transform: [{ rotate: `${orbRotate.value}deg` }],
-    };
-  });
 
   const formatDate = (date: Date): string => {
     const year = date.getFullYear();
@@ -102,11 +99,9 @@ export default function HomeScreen() {
     try {
       const dateStr = formatDate(selectedDate);
       
-      // Try to fetch day from backend
       const day = await dayApi.getByDate(dateStr);
       console.log('HomeScreen: Loaded day from backend:', day);
       
-      // Fetch reminders for this day
       const reminders = await reminderApi.getByDayId(day.id);
       console.log('HomeScreen: Loaded reminders from backend:', reminders);
       
@@ -123,7 +118,6 @@ export default function HomeScreen() {
       console.log('HomeScreen: No data found for this day or error:', error.message);
       setDayData(null);
       
-      // Only show error if it's not a 404 (day not found)
       if (!error.message?.includes('404')) {
         setError('Fehler beim Laden der Daten');
       }
@@ -131,8 +125,6 @@ export default function HomeScreen() {
       setLoading(false);
     }
   };
-
-
 
   const setupDay = async () => {
     console.log('HomeScreen: User tapped "Tag einrichten" button');
@@ -142,7 +134,6 @@ export default function HomeScreen() {
     setError(null);
 
     try {
-      // Create day in backend (reminders are auto-generated)
       const day = await dayApi.create({
         date: formatDate(selectedDate),
         wakeTime,
@@ -152,7 +143,6 @@ export default function HomeScreen() {
       
       console.log('HomeScreen: Day created successfully:', day);
       
-      // Fetch the generated reminders
       const reminders = await reminderApi.getByDayId(day.id);
       console.log('HomeScreen: Fetched generated reminders:', reminders);
       
@@ -180,19 +170,15 @@ export default function HomeScreen() {
     if (!reminder) return;
 
     try {
-      // If not completed, mark as completed
       if (!reminder.completed) {
         const updatedReminder = await reminderApi.complete(reminderId);
         console.log('HomeScreen: Reminder marked as completed:', updatedReminder);
         
-        // Update local state
         const updatedReminders = dayData.reminders.map(r =>
           r.id === reminderId ? updatedReminder : r
         );
         setDayData({ ...dayData, reminders: updatedReminders });
       } else {
-        // If already completed, we can't uncomplete via API
-        // Just show a message or do nothing
         console.log('HomeScreen: Reminder already completed');
       }
     } catch (error: any) {
@@ -275,15 +261,6 @@ export default function HomeScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
-      <Animated.View style={[styles.backgroundOrb, orbStyle]}>
-        <LinearGradient
-          colors={[theme.primaryRgb, theme.secondaryRgb, theme.accentRgb]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.orbGradient}
-        />
-      </Animated.View>
-
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         {error && (
           <View style={[styles.errorBanner, { backgroundColor: '#FF3B30' }]}>
@@ -299,61 +276,61 @@ export default function HomeScreen() {
           </View>
         )}
         
+        <Animated.View entering={FadeIn.duration(600)} style={styles.calendarContainer}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.calendarScroll}
+          >
+            {getCalendarDays().map((date, index) => {
+              const dayNum = date.getDate();
+              const weekday = WEEKDAYS[date.getDay()];
+              const isTodayDate = isToday(date);
+              const isSelectedDate = isSelected(date);
+
+              return (
+                <TouchableOpacity
+                  key={index}
+                  onPress={() => {
+                    console.log('HomeScreen: User selected date', formatDate(date));
+                    setSelectedDate(date);
+                  }}
+                  style={[
+                    styles.calendarDay,
+                    { backgroundColor: theme.card },
+                    isTodayDate && styles.calendarDayToday,
+                    isSelectedDate && { backgroundColor: theme.primaryRgb },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.calendarDayNumber,
+                      { color: theme.text },
+                      isSelectedDate && styles.calendarDaySelectedText,
+                    ]}
+                  >
+                    {dayNum}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.calendarDayName,
+                      { color: theme.textSecondary },
+                      isSelectedDate && styles.calendarDaySelectedText,
+                    ]}
+                  >
+                    {weekday}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </ScrollView>
+        </Animated.View>
+
         <ScrollView
           style={styles.scrollView}
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          <Animated.View entering={FadeIn.duration(600)} style={styles.calendarContainer}>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.calendarScroll}
-            >
-              {getCalendarDays().map((date, index) => {
-                const dayNum = date.getDate();
-                const weekday = WEEKDAYS[date.getDay()];
-                const isTodayDate = isToday(date);
-                const isSelectedDate = isSelected(date);
-
-                return (
-                  <TouchableOpacity
-                    key={index}
-                    onPress={() => {
-                      console.log('HomeScreen: User selected date', formatDate(date));
-                      setSelectedDate(date);
-                    }}
-                    style={[
-                      styles.calendarDay,
-                      { backgroundColor: theme.card },
-                      isTodayDate && styles.calendarDayToday,
-                      isSelectedDate && { backgroundColor: theme.primaryRgb },
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        styles.calendarDayNumber,
-                        { color: theme.text },
-                        isSelectedDate && styles.calendarDaySelectedText,
-                      ]}
-                    >
-                      {dayNum}
-                    </Text>
-                    <Text
-                      style={[
-                        styles.calendarDayName,
-                        { color: theme.textSecondary },
-                        isSelectedDate && styles.calendarDaySelectedText,
-                      ]}
-                    >
-                      {weekday}
-                    </Text>
-                  </TouchableOpacity>
-                );
-              })}
-            </ScrollView>
-          </Animated.View>
-
           <Animated.View
             entering={FadeInDown.delay(200).duration(600)}
             style={[styles.counterCard, { backgroundColor: theme.card }]}
@@ -362,8 +339,8 @@ export default function HomeScreen() {
               <Text style={[styles.counterNumber, { color: theme.text }]}>
                 {completedCount}
               </Text>
-              <Text style={[styles.counterNumber, { color: theme.textSecondary }]}>
-                {' / '}
+              <Text style={[styles.counterSeparator, { color: theme.textSecondary }]}>
+                /
               </Text>
               <Text style={[styles.counterNumber, { color: theme.text }]}>
                 {totalCount}
@@ -586,7 +563,7 @@ export default function HomeScreen() {
             </Animated.View>
           )}
 
-          <View style={{ height: 100 }} />
+          <View style={{ height: 120 }} />
         </ScrollView>
       </SafeAreaView>
 
@@ -631,19 +608,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  backgroundOrb: {
-    position: 'absolute',
-    top: -200,
-    right: -200,
-    width: 500,
-    height: 500,
-    opacity: 0.15,
-  },
-  orbGradient: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 250,
-  },
   safeArea: {
     flex: 1,
   },
@@ -669,15 +633,16 @@ const styles = StyleSheet.create({
     marginTop: 16,
     textAlign: 'center',
   },
+  calendarContainer: {
+    paddingTop: 0,
+    paddingHorizontal: 20,
+    marginBottom: 16,
+  },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
     paddingHorizontal: 20,
-    paddingTop: 20,
-  },
-  calendarContainer: {
-    marginBottom: 20,
   },
   calendarScroll: {
     gap: 12,
@@ -707,7 +672,7 @@ const styles = StyleSheet.create({
   },
   counterCard: {
     borderRadius: 20,
-    padding: 24,
+    padding: 16,
     alignItems: 'center',
     marginBottom: 20,
   },
@@ -716,13 +681,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   counterNumber: {
-    fontSize: 48,
+    fontSize: 32,
     fontWeight: '900',
   },
+  counterSeparator: {
+    fontSize: 32,
+    fontWeight: '900',
+    marginHorizontal: 4,
+  },
   counterStatus: {
-    fontSize: 16,
+    fontSize: 12,
     fontWeight: '600',
-    marginTop: 8,
+    marginTop: 4,
   },
   setupCard: {
     borderRadius: 20,

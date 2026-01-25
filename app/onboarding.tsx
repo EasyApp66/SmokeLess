@@ -97,8 +97,6 @@ export default function OnboardingScreen() {
     console.log('OnboardingScreen: User tapped "Los geht\'s" button');
     setIsSigningIn(true);
     try {
-      // Use Better Auth for Apple Sign-In
-      // Better Auth handles the OAuth flow and creates/updates user in backend
       await authClient.signIn.social({
         provider: 'apple',
         callbackURL: '/(tabs)/(home)/',
@@ -106,7 +104,6 @@ export default function OnboardingScreen() {
       
       console.log('OnboardingScreen: Apple Sign-In successful via Better Auth');
       
-      // Mark onboarding as complete
       await AsyncStorage.setItem('smoke-onboarding-completed', 'true');
       console.log('OnboardingScreen: User authenticated, navigating to home');
       router.replace('/(tabs)/(home)/');
@@ -115,8 +112,6 @@ export default function OnboardingScreen() {
       if (error.code === 'ERR_REQUEST_CANCELED' || error.message?.includes('cancel')) {
         console.log('OnboardingScreen: User canceled Apple Sign-In');
       } else {
-        // If Apple Sign-In fails, still allow user to continue
-        // This allows users to skip authentication if they want
         await AsyncStorage.setItem('smoke-onboarding-completed', 'true');
         router.replace('/(tabs)/(home)/');
       }
@@ -284,9 +279,9 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     paddingHorizontal: 32,
-    paddingTop: 20,
+    paddingTop: 60,
     paddingBottom: 40,
   },
   orb1: {
@@ -308,27 +303,26 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.3)',
   },
   titleContainer: {
-    alignItems: 'center',
+    alignItems: 'flex-start',
     marginTop: 20,
   },
   title: {
     fontSize: 56,
     fontWeight: '900',
     color: '#FFFFFF',
-    textAlign: 'center',
+    textAlign: 'left',
     letterSpacing: -1,
   },
   textContainer: {
-    alignItems: 'center',
-    gap: 20,
+    alignItems: 'flex-start',
+    gap: 16,
   },
   description: {
     fontSize: 18,
     fontWeight: '500',
     color: 'rgba(255, 255, 255, 0.95)',
-    textAlign: 'center',
+    textAlign: 'left',
     lineHeight: 28,
-    paddingHorizontal: 8,
   },
   buttonContainer: {
     width: '100%',
