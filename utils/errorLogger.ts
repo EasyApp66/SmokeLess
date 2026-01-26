@@ -235,7 +235,7 @@ const stringifyArgs = (args: any[]): string => {
     if (arg === undefined) return 'undefined';
     try {
       return JSON.stringify(arg);
-    } catch {
+    } catch (error) {
       return String(arg);
     }
   }).join(' ');
