@@ -292,11 +292,7 @@ export default function HomeScreen() {
         )}
         
         <Animated.View entering={FadeIn.duration(600)} style={styles.calendarContainer}>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.calendarScroll}
-          >
+          <View style={styles.calendarScroll}>
             {getCalendarDays().map((date, index) => {
               const dayNum = date.getDate();
               const weekday = WEEKDAYS[date.getDay()];
@@ -313,7 +309,7 @@ export default function HomeScreen() {
                   style={[
                     styles.calendarDay,
                     { backgroundColor: theme.card },
-                    isTodayDate && styles.calendarDayToday,
+                    isTodayDate && { borderWidth: 2, borderColor: 'rgba(52, 199, 89, 1)' },
                     isSelectedDate && { backgroundColor: theme.primaryRgb },
                   ]}
                 >
@@ -338,7 +334,7 @@ export default function HomeScreen() {
                 </TouchableOpacity>
               );
             })}
-          </ScrollView>
+          </View>
         </Animated.View>
 
         <ScrollView
@@ -544,7 +540,7 @@ export default function HomeScreen() {
             </Animated.View>
           )}
 
-          <View style={{ height: 120 }} />
+          <View style={{ height: 140 }} />
         </ScrollView>
       </SafeAreaView>
 
@@ -717,7 +713,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   calendarContainer: {
-    paddingTop: 0,
+    paddingTop: 8,
     paddingHorizontal: 20,
     marginBottom: 16,
   },
@@ -728,19 +724,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   calendarScroll: {
-    gap: 12,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 8,
   },
   calendarDay: {
-    width: 60,
-    height: 70,
+    flex: 1,
+    height: 76,
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 4,
-  },
-  calendarDayToday: {
-    borderWidth: 2,
-    borderColor: 'rgb(29, 200, 130)',
   },
   calendarDayNumber: {
     fontSize: 24,
@@ -859,7 +853,7 @@ const styles = StyleSheet.create({
   },
   reminderItemNext: {
     borderWidth: 2,
-    borderColor: 'rgb(29, 200, 130)',
+    borderColor: 'rgba(52, 199, 89, 1)',
   },
   reminderContent: {
     flex: 1,
@@ -879,7 +873,7 @@ const styles = StyleSheet.create({
   reminderEncouragement: {
     fontSize: 12,
     fontWeight: '600',
-    color: 'rgb(29, 200, 130)',
+    color: 'rgba(52, 199, 89, 1)',
     marginTop: 4,
   },
   reminderCheckbox: {

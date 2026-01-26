@@ -22,8 +22,6 @@ import Animated, {
 } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as Application from 'expo-application';
-import * as Device from 'expo-device';
 
 export default function OnboardingScreen() {
   console.log('OnboardingScreen: Rendering onboarding screen');
@@ -91,46 +89,15 @@ export default function OnboardingScreen() {
   const [showLegalModal, setShowLegalModal] = React.useState(false);
   const [isStarting, setIsStarting] = React.useState(false);
 
-  const generateDeviceId = async () => {
-    console.log('OnboardingScreen: Generating unique device ID');
-    try {
-      let deviceId = await AsyncStorage.getItem('smoke-device-id');
-      
-      if (!deviceId) {
-        const androidId = Application.getAndroidId();
-        const deviceName = Device.modelName || 'unknown';
-        const timestamp = Date.now();
-        const randomPart = Math.random().toString(36).substr(2, 9);
-        
-        deviceId = `${androidId || deviceName}-${timestamp}-${randomPart}`;
-        
-        await AsyncStorage.setItem('smoke-device-id', deviceId);
-        console.log('OnboardingScreen: Generated and stored device ID:', deviceId);
-      } else {
-        console.log('OnboardingScreen: Using existing device ID:', deviceId);
-      }
-      
-      return deviceId;
-    } catch (error) {
-      console.error('OnboardingScreen: Error generating device ID:', error);
-      const fallbackId = `device-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-      await AsyncStorage.setItem('smoke-device-id', fallbackId);
-      return fallbackId;
-    }
-  };
-
   const handleStart = async () => {
-    console.log('OnboardingScreen: User tapped "GO" button - Starting onboarding completion');
+    console.log('OnboardingScreen: User tapped "GO" button - Completing onboarding');
     setIsStarting(true);
     
     try {
-      console.log('OnboardingScreen: Step 1 - Generating device ID');
-      await generateDeviceId();
-      
-      console.log('OnboardingScreen: Step 2 - Setting onboarding completed flag');
+      console.log('OnboardingScreen: Setting onboarding completed flag');
       await AsyncStorage.setItem('smoke-onboarding-completed', 'true');
       
-      console.log('OnboardingScreen: Step 3 - Verifying AsyncStorage write');
+      console.log('OnboardingScreen: Verifying AsyncStorage write');
       const verification = await AsyncStorage.getItem('smoke-onboarding-completed');
       console.log('OnboardingScreen: Verification result:', verification);
       
