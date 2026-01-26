@@ -120,21 +120,38 @@ export default function OnboardingScreen() {
   };
 
   const handleStart = async () => {
-    console.log('OnboardingScreen: User tapped "GO" button');
+    console.log('OnboardingScreen: User tapped "GO" button - Starting onboarding completion');
     setIsStarting(true);
     
     try {
+      console.log('OnboardingScreen: Step 1 - Generating device ID');
       await generateDeviceId();
       
+      console.log('OnboardingScreen: Step 2 - Setting onboarding completed flag');
       await AsyncStorage.setItem('smoke-onboarding-completed', 'true');
-      console.log('OnboardingScreen: Onboarding completed, navigating to home');
       
-      router.replace('/(tabs)/(home)/');
+      console.log('OnboardingScreen: Step 3 - Verifying AsyncStorage write');
+      const verification = await AsyncStorage.getItem('smoke-onboarding-completed');
+      console.log('OnboardingScreen: Verification result:', verification);
+      
+      if (verification === 'true') {
+        console.log('OnboardingScreen: ✅ Onboarding completed successfully, navigating to home screen');
+        
+        setTimeout(() => {
+          router.replace('/(tabs)/(home)');
+          console.log('OnboardingScreen: Navigation command executed');
+        }, 100);
+      } else {
+        console.error('OnboardingScreen: ❌ Failed to verify onboarding completion');
+        router.replace('/(tabs)/(home)');
+      }
     } catch (error) {
-      console.error('OnboardingScreen: Error during onboarding:', error);
-      router.replace('/(tabs)/(home)/');
+      console.error('OnboardingScreen: ❌ Error during onboarding:', error);
+      router.replace('/(tabs)/(home)');
     } finally {
-      setIsStarting(false);
+      setTimeout(() => {
+        setIsStarting(false);
+      }, 500);
     }
   };
 

@@ -70,10 +70,13 @@ export default function RootLayout() {
   useEffect(() => {
     const checkOnboarding = async () => {
       try {
+        console.log('RootLayout: Checking onboarding status from AsyncStorage');
         const completed = await AsyncStorage.getItem('smoke-onboarding-completed');
-        console.log('RootLayout: Onboarding status:', completed);
-        setHasCompletedOnboarding(completed === 'true');
+        console.log('RootLayout: Onboarding status retrieved:', completed);
+        const isCompleted = completed === 'true';
+        setHasCompletedOnboarding(isCompleted);
         setIsReady(true);
+        console.log('RootLayout: App ready, onboarding completed:', isCompleted);
       } catch (error) {
         console.error('RootLayout: Error checking onboarding:', error);
         setIsReady(true);
@@ -84,20 +87,29 @@ export default function RootLayout() {
   }, []);
 
   useEffect(() => {
-    if (!isReady || !loaded) return;
+    if (!isReady || !loaded) {
+      console.log('RootLayout: Not ready yet, waiting... (isReady:', isReady, ', loaded:', loaded, ')');
+      return;
+    }
 
-    const inAuthGroup = segments[0] === 'onboarding';
+    const inOnboardingScreen = segments[0] === 'onboarding';
+    const inTabsScreen = segments[0] === '(tabs)';
 
-    if (!hasCompletedOnboarding && !inAuthGroup) {
-      console.log('RootLayout: Redirecting to onboarding');
+    console.log('RootLayout: Navigation check - segments:', segments, 'hasCompletedOnboarding:', hasCompletedOnboarding);
+
+    if (!hasCompletedOnboarding && !inOnboardingScreen) {
+      console.log('RootLayout: ➡️ User has not completed onboarding, redirecting to /onboarding');
       router.replace('/onboarding');
-    } else if (hasCompletedOnboarding && inAuthGroup) {
-      console.log('RootLayout: Redirecting to home');
-      router.replace('/(tabs)/(home)/');
+    } else if (hasCompletedOnboarding && inOnboardingScreen) {
+      console.log('RootLayout: ➡️ User has completed onboarding but is on onboarding screen, redirecting to home');
+      router.replace('/(tabs)/(home)');
+    } else {
+      console.log('RootLayout: ✅ User is on correct screen, no redirect needed');
     }
   }, [hasCompletedOnboarding, segments, isReady, loaded, router]);
 
   if (!loaded || !isReady) {
+    console.log('RootLayout: Waiting for app to be ready...');
     return null;
   }
 
