@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -39,11 +39,7 @@ export default function StatisticsScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadStatistics();
-  }, []);
-
-  const loadStatistics = async () => {
+  const loadStatistics = useCallback(async () => {
     console.log('StatisticsScreen: Loading statistics');
     setLoading(true);
     setError(null);
@@ -102,7 +98,11 @@ export default function StatisticsScreen() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    loadStatistics();
+  }, [loadStatistics]);
 
   const formatDate = (date: Date): string => {
     const year = date.getFullYear();

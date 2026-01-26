@@ -97,7 +97,7 @@ export default function RootLayout() {
       console.log('RootLayout: Redirecting to home');
       router.replace('/(tabs)/(home)/');
     }
-  }, [hasCompletedOnboarding, segments, isReady, loaded]);
+  }, [hasCompletedOnboarding, segments, isReady, loaded, router]);
 
   if (!loaded || !isReady) {
     return null;
