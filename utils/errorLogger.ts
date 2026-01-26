@@ -1,4 +1,3 @@
-
 // Global error logging for runtime errors
 // Captures console.log/warn/error and sends to Natively server for AI debugging
 
@@ -26,7 +25,7 @@ const shouldMuteMessage = (message: string): boolean => {
 };
 
 // Queue for batching logs
-let logQueue: { level: string; message: string; source: string; timestamp: string; platform: string }[] = [];
+let logQueue: Array<{ level: string; message: string; source: string; timestamp: string; platform: string }> = [];
 let flushTimeout: ReturnType<typeof setTimeout> | null = null;
 const FLUSH_INTERVAL = 500; // Flush every 500ms
 
@@ -182,6 +181,40 @@ const sendErrorToParent = (level: string, message: string, data: any) => {
   }
 };
 
+// Function to extract meaningful source location from stack trace
+const extractSourceLocation = (stack: string): string => {
+  if (!stack) return '';
+
+  // Look for various patterns in the stack trace
+  const patterns = [
+    // Pattern for app files: app/filename.tsx:line:column
+    /at .+\/(app\/[^:)]+):(\d+):(\d+)/,
+    // Pattern for components: components/filename.tsx:line:column
+    /at .+\/(components\/[^:)]+):(\d+):(\d+)/,
+    // Pattern for any .tsx/.ts files
+    /at .+\/([^/]+\.tsx?):(\d+):(\d+)/,
+    // Pattern for bundle files with source maps
+    /at .+\/([^/]+\.bundle[^:]*):(\d+):(\d+)/,
+    // Pattern for any JavaScript file
+    /at .+\/([^/\s:)]+\.[jt]sx?):(\d+):(\d+)/
+  ];
+
+  for (const pattern of patterns) {
+    const match = stack.match(pattern);
+    if (match) {
+      return `${match[1]}:${match[2]}:${match[3]}`;
+    }
+  }
+
+  // If no specific pattern matches, try to find any file reference
+  const fileMatch = stack.match(/at .+\/([^/\s:)]+\.[jt]sx?):(\d+)/);
+  if (fileMatch) {
+    return `${fileMatch[1]}:${fileMatch[2]}`;
+  }
+
+  return '';
+};
+
 // Function to get caller information from stack trace
 const getCallerInfo = (): string => {
   const stack = new Error().stack || '';
@@ -235,7 +268,7 @@ const stringifyArgs = (args: any[]): string => {
     if (arg === undefined) return 'undefined';
     try {
       return JSON.stringify(arg);
-    } catch (error) {
+    } catch {
       return String(arg);
     }
   }).join(' ');

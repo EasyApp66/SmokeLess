@@ -106,7 +106,7 @@ export default function SettingsScreen() {
             console.log('SettingsScreen: Deleting all data');
             try {
               await AsyncStorage.clear();
-              console.log('SettingsScreen: Data deleted, redirecting to onboarding');
+              console.log('SettingsScreen: Data deleted, redirecting to welcome');
               router.replace('/onboarding');
             } catch (error) {
               console.error('SettingsScreen: Error deleting data:', error);
@@ -136,7 +136,7 @@ export default function SettingsScreen() {
             console.log('SettingsScreen: Logging out');
             try {
               await AsyncStorage.removeItem('smoke-onboarding-completed');
-              console.log('SettingsScreen: Logged out, redirecting to onboarding');
+              console.log('SettingsScreen: Logged out, redirecting to welcome');
               router.replace('/onboarding');
             } catch (error) {
               console.error('SettingsScreen: Error logging out:', error);
