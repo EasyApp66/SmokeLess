@@ -392,7 +392,7 @@ export default function HomeScreen() {
                 />
                 <View style={styles.setupHeaderText}>
                   <Text style={[styles.setupTitle, { color: theme.text }]}>
-                    Morgen einrichten
+                    Heute einrichten
                   </Text>
                 </View>
               </View>
