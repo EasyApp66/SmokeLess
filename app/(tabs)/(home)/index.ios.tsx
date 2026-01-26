@@ -7,9 +7,6 @@ import {
   ScrollView,
   TouchableOpacity,
   useColorScheme,
-  Platform,
-  Dimensions,
-  TextInput,
   ActivityIndicator,
   Modal,
 } from 'react-native';
@@ -17,21 +14,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, {
   FadeIn,
   FadeInDown,
-  useSharedValue,
-  useAnimatedStyle,
-  withRepeat,
-  withTiming,
-  Easing,
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { colors } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
-import { dayApi, reminderApi, Day, Reminder } from '@/utils/api';
+import { dayApi, reminderApi, Reminder } from '@/utils/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ScrollPicker } from '@/components/ScrollPicker';
-
-const { width } = Dimensions.get('window');
 
 interface DayData {
   id: string;

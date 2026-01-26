@@ -6,7 +6,6 @@ import {
   StyleSheet,
   TouchableOpacity,
   useColorScheme,
-  Dimensions,
   Modal,
   ScrollView,
   ActivityIndicator,
@@ -25,8 +24,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Application from 'expo-application';
 import * as Device from 'expo-device';
-
-const { width, height } = Dimensions.get('window');
 
 export default function OnboardingScreen() {
   console.log('OnboardingScreen: Rendering onboarding screen');

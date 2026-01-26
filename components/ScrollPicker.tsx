@@ -5,13 +5,11 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  Dimensions,
   NativeScrollEvent,
   NativeSyntheticEvent,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 
-const { height } = Dimensions.get('window');
 const ITEM_HEIGHT = 50;
 const VISIBLE_ITEMS = 5;
 

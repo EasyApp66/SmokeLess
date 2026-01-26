@@ -4,12 +4,11 @@ import * as SplashScreen from "expo-splash-screen";
 import { SystemBars } from "react-native-edge-to-edge";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { useFonts } from "expo-font";
-import { useColorScheme, Alert } from "react-native";
+import { useColorScheme } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { WidgetProvider } from "@/contexts/WidgetContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import "react-native-reanimated";
-import { useNetworkState } from "expo-network";
 import {
   DarkTheme,
   DefaultTheme,
@@ -20,7 +19,6 @@ import { Stack, useRouter, useSegments } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Constants from "expo-constants";
 
-// Log backend URL at app startup for debugging
 const BACKEND_URL = Constants.expoConfig?.extra?.backendUrl || "";
 console.log('🔗 Backend URL configured:', BACKEND_URL);
 

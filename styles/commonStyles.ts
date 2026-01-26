@@ -1,9 +1,7 @@
 
-import { StyleSheet, ViewStyle, TextStyle } from 'react-native';
+import { StyleSheet } from 'react-native';
 
-// Smoke App Color Scheme
 export const colors = {
-  // Light theme
   light: {
     background: 'hsl(140, 25%, 98%)',
     backgroundRgb: 'rgb(245, 252, 248)',
@@ -22,7 +20,6 @@ export const colors = {
     border: 'hsl(140, 20%, 85%)',
     borderRgb: 'rgb(209, 227, 217)',
   },
-  // Dark theme
   dark: {
     background: 'hsl(240, 3%, 11%)',
     backgroundRgb: 'rgb(28, 28, 30)',

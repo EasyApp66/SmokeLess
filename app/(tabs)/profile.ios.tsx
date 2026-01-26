@@ -6,7 +6,6 @@ import {
   StyleSheet,
   ScrollView,
   useColorScheme,
-  Dimensions,
   ActivityIndicator,
   TouchableOpacity,
 } from 'react-native';
@@ -15,8 +14,6 @@ import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { colors } from '@/styles/commonStyles';
 import { dayApi, reminderApi } from '@/utils/api';
 import { IconSymbol } from '@/components/IconSymbol';
-
-const { width } = Dimensions.get('window');
 
 interface DayStats {
   date: string;
@@ -57,10 +54,7 @@ export default function StatisticsScreen() {
         const dateStr = formatDate(date);
 
         try {
-          // Fetch day from backend
           const day = await dayApi.getByDate(dateStr);
-          
-          // Fetch reminders for this day
           const reminders = await reminderApi.getByDayId(day.id);
           
           const completed = reminders.filter(r => r.completed).length;
@@ -77,7 +71,6 @@ export default function StatisticsScreen() {
             bestDayData = { date: dateStr, completed, target: day.targetCigarettes };
           }
         } catch (dayError: any) {
-          // Day not found, add empty stats
           console.log(`StatisticsScreen: No data for ${dateStr}`);
           stats.push({
             date: dateStr,
@@ -112,7 +105,7 @@ export default function StatisticsScreen() {
   };
 
   const formatDisplayDate = (dateStr: string): string => {
-    const [year, month, day] = dateStr.split('-');
+    const [, month, day] = dateStr.split('-');
     return `${day}.${month}.`;
   };
 
