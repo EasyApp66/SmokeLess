@@ -9,11 +9,90 @@ import {
   useColorScheme,
   ActivityIndicator,
   Modal,
+  Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, {
   FadeIn,
   FadeInDown,
+  useSharedValue,
+  useAnimatedStyle,
+  withRepeat,
+  withTiming,
+  Easing,
+  withSequence,
+} from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
+import * as Haptics from 'expo-haptics';
+import { colors } from '@/styles/commonStyles';
+import { IconSymbol } from '@/components/IconSymbol';
+import { dayApi, reminderApi, Reminder } from '@/utils/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { ScrollPicker } from '@/components/ScrollPicker';
+
+interface DayData {
+  id: string;
+  date: string;
+  wakeTime: string;
+  sleepTime: string;
+  targetCigarettes: number;
+  reminders: Reminder[];
+}
+
+const WEEKDAYS = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
+
+const generateHours = () => {
+  const hours = [];
+  for (let i = 0; i < 24; i++) {
+    hours.push(String(i).padStart(2, '0'));
+  }
+  return hours;
+};
+
+const generateMinutes = () => {
+  const minutes = [];
+  for (let i = 0; i < 60; i++) {
+    minutes.push(String(i).padStart(2, '0'));
+  }
+  return minutes;
+};
+
+const generateCigarettes = () => {
+  const cigarettes = [];
+  for (let i = 1; i <= 60; i++) {
+    cigarettes.push(String(i));
+  }
+  return cigarettes;
+};
+
+export default function HomeScreen() {
+  console.log('HomeScreen: Rendering home screen (iOS)');
+  const systemColorScheme = useColorScheme();
+  const [manualDarkMode, setManualDarkModeNow I'll completely rebuild the home screen according to the specifications. Let me create the new home screen with all the required features:
+
+<write file="app/(tabs)/(home)/index.ios.tsx">
+import React, { useState, useEffect, useCallback } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  useColorScheme,
+  ActivityIndicator,
+  Modal,
+  Dimensions,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import Animated, {
+  FadeIn,
+  FadeInDown,
+  useSharedValue,
+  useAnimatedStyle,
+  withRepeat,
+  withTiming,
+  Easing,
+  withSequence,
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
@@ -91,6 +170,23 @@ export default function HomeScreen() {
   const hours = generateHours();
   const minutes = generateMinutes();
   const cigarettes = generateCigarettes();
+
+  const orbRotation = useSharedValue(0);
+
+  useEffect(() => {
+    console.log('HomeScreen: Starting background orb animation');
+    orbRotation.value = withRepeat(
+      withTiming(360, { duration: 120000, easing: Easing.linear }),
+      -1,
+      false
+    );
+  }, [orbRotation]);
+
+  const orbStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ rotate: `${orbRotation.value}deg` }],
+    };
+  });
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -235,10 +331,15 @@ export default function HomeScreen() {
     const diffMins = Math.floor(diffMs / 60000);
 
     if (diffMins < 0) return 'abgelaufen';
-    if (diffMins < 60) return `in ${diffMins} Min`;
+    if (diffMins === 0) return 'jetzt';
+    if (diffMins < 60) {
+      const minText = `in ${diffMins} Min`;
+      return minText;
+    }
     const hours = Math.floor(diffMins / 60);
     const mins = diffMins % 60;
-    return `in ${hours}h ${mins}m`;
+    const timeText = `in ${hours}h ${mins}m`;
+    return timeText;
   };
 
   const getNextReminderIndex = (): number => {
@@ -265,17 +366,42 @@ export default function HomeScreen() {
   const nextReminderIdx = getNextReminderIndex();
 
   let statusText = 'Bereit wenn du es bist';
-  if (dayData && completedCount === totalCount) {
+  if (dayData && completedCount === totalCount && totalCount > 0) {
     statusText = 'Tag geschafft! 🎉';
   } else if (dayData && remainingCount > 0) {
-    statusText = `Noch ${remainingCount} übrig`;
+    const remainingText = `Noch ${remainingCount} übrig`;
+    statusText = remainingText;
   }
 
   const [wakeHour, wakeMinute] = wakeTime.split(':');
   const [sleepHour, sleepMinute] = sleepTime.split(':');
 
+  const counterScale = useSharedValue(1);
+
+  useEffect(() => {
+    counterScale.value = withSequence(
+      withTiming(1.05, { duration: 150 }),
+      withTiming(1, { duration: 150 })
+    );
+  }, [completedCount, counterScale]);
+
+  const counterAnimStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ scale: counterScale.value }],
+    };
+  });
+
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
+      <Animated.View style={[styles.backgroundOrb, orbStyle]}>
+        <LinearGradient
+          colors={['rgba(29, 200, 130, 0.1)', 'rgba(0, 0, 0, 0)', 'rgba(51, 204, 153, 0.1)']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.orbGradient}
+        />
+      </Animated.View>
+
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         {error && (
           <View style={[styles.errorBanner, { backgroundColor: '#FF3B30' }]}>
@@ -341,31 +467,31 @@ export default function HomeScreen() {
           </ScrollView>
         </Animated.View>
 
+        <Animated.View
+          entering={FadeInDown.delay(200).duration(600)}
+          style={[styles.stickyCounter, { backgroundColor: `${theme.background}F2` }]}
+        >
+          <Animated.View style={[styles.counterRow, counterAnimStyle]}>
+            <Text style={[styles.counterNumberLarge, { color: theme.text }]}>
+              {completedCount}
+            </Text>
+            <Text style={[styles.counterSeparator, { color: theme.textSecondary }]}>
+              /
+            </Text>
+            <Text style={[styles.counterNumberSmall, { color: theme.textSecondary }]}>
+              {totalCount}
+            </Text>
+          </Animated.View>
+          <Text style={[styles.counterStatus, { color: theme.textSecondary }]}>
+            {statusText}
+          </Text>
+        </Animated.View>
+
         <ScrollView
           style={styles.scrollView}
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
-          <Animated.View
-            entering={FadeInDown.delay(200).duration(600)}
-            style={[styles.counterCard, { backgroundColor: theme.card }]}
-          >
-            <View style={styles.counterRow}>
-              <Text style={[styles.counterNumber, { color: theme.text }]}>
-                {completedCount}
-              </Text>
-              <Text style={[styles.counterSeparator, { color: theme.textSecondary }]}>
-                /
-              </Text>
-              <Text style={[styles.counterNumber, { color: theme.text }]}>
-                {totalCount}
-              </Text>
-            </View>
-            <Text style={[styles.counterStatus, { color: theme.textSecondary }]}>
-              {statusText}
-            </Text>
-          </Animated.View>
-
           {loading && (
             <Animated.View
               entering={FadeInDown.delay(400).duration(600)}
@@ -392,12 +518,18 @@ export default function HomeScreen() {
                 />
                 <View style={styles.setupHeaderText}>
                   <Text style={[styles.setupTitle, { color: theme.text }]}>
-                    Morgen einrichten
+                    Heute einrichten
+                  </Text>
+                  <Text style={[styles.setupSubtitle, { color: theme.textSecondary }]}>
+                    Lege deine Zeiten und dein Ziel fest
                   </Text>
                 </View>
               </View>
 
               <View style={styles.setupInputs}>
+                <Text style={[styles.sectionLabel, { color: theme.textSecondary }]}>
+                  DEIN ZEITPLAN
+                </Text>
                 <View style={styles.timeRow}>
                   <View style={styles.timeInput}>
                     <Text style={[styles.inputLabel, { color: theme.textSecondary }]}>
@@ -435,8 +567,11 @@ export default function HomeScreen() {
                 </View>
 
                 <View style={styles.cigaretteInput}>
-                  <Text style={[styles.inputLabel, { color: theme.textSecondary }]}>
+                  <Text style={[styles.sectionLabel, { color: theme.textSecondary }]}>
                     TAGESZIEL ZIGARETTEN
+                  </Text>
+                  <Text style={[styles.cigaretteLabel, { color: theme.textSecondary }]}>
+                    Zigaretten pro Tag
                   </Text>
                   <TouchableOpacity
                     onPress={() => {
@@ -474,9 +609,69 @@ export default function HomeScreen() {
             </Animated.View>
           )}
 
-          {dayData && dayData.reminders.length > 0 && (
+          {!loading && dayData && (
             <Animated.View
               entering={FadeInDown.delay(400).duration(600)}
+              style={[styles.compactSetupCard, { backgroundColor: theme.card }]}
+            >
+              <View style={styles.compactTimeRow}>
+                <View style={styles.compactTimeInput}>
+                  <Text style={[styles.compactInputLabel, { color: theme.textSecondary }]}>
+                    AUFSTEHZEIT
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() => {
+                      console.log('HomeScreen: User tapped wake time picker (compact)');
+                      setShowWakePicker(true);
+                    }}
+                    style={[styles.compactTimePicker, { backgroundColor: theme.background }]}
+                  >
+                    <Text style={[styles.compactTimeText, { color: theme.primary }]}>
+                      {wakeTime}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+
+                <View style={styles.compactTimeInput}>
+                  <Text style={[styles.compactInputLabel, { color: theme.textSecondary }]}>
+                    SCHLAFENSZEIT
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() => {
+                      console.log('HomeScreen: User tapped sleep time picker (compact)');
+                      setShowSleepPicker(true);
+                    }}
+                    style={[styles.compactTimePicker, { backgroundColor: theme.background }]}
+                  >
+                    <Text style={[styles.compactTimeText, { color: theme.primary }]}>
+                      {sleepTime}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+
+                <View style={styles.compactCigaretteInput}>
+                  <Text style={[styles.compactInputLabel, { color: theme.textSecondary }]}>
+                    ZIEL
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() => {
+                      console.log('HomeScreen: User tapped cigarette picker (compact)');
+                      setShowCigarettePicker(true);
+                    }}
+                    style={[styles.compactCigarettePicker, { backgroundColor: theme.background }]}
+                  >
+                    <Text style={[styles.compactCigaretteNumber, { color: theme.primary }]}>
+                      {targetCigarettes}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </Animated.View>
+          )}
+
+          {dayData && dayData.reminders.length > 0 && (
+            <Animated.View
+              entering={FadeInDown.delay(500).duration(600)}
               style={styles.reminderList}
             >
               {dayData.reminders.map((reminder, index) => {
@@ -691,6 +886,19 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  backgroundOrb: {
+    position: 'absolute',
+    top: -300,
+    right: -300,
+    width: 600,
+    height: 600,
+    borderRadius: 300,
+    overflow: 'hidden',
+  },
+  orbGradient: {
+    width: '100%',
+    height: '100%',
+  },
   safeArea: {
     flex: 1,
   },
@@ -717,15 +925,9 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   calendarContainer: {
-    paddingTop: 0,
+    paddingTop: 16,
     paddingHorizontal: 20,
     marginBottom: 16,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingHorizontal: 20,
   },
   calendarScroll: {
     gap: 12,
@@ -753,29 +955,39 @@ const styles = StyleSheet.create({
   calendarDaySelectedText: {
     color: '#FFFFFF',
   },
-  counterCard: {
-    borderRadius: 20,
-    padding: 16,
+  stickyCounter: {
+    paddingVertical: 16,
+    paddingHorizontal: 20,
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 16,
   },
   counterRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'baseline',
   },
-  counterNumber: {
-    fontSize: 28,
+  counterNumberLarge: {
+    fontSize: 48,
     fontWeight: '900',
   },
   counterSeparator: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: '900',
     marginHorizontal: 4,
   },
+  counterNumberSmall: {
+    fontSize: 24,
+    fontWeight: '900',
+  },
   counterStatus: {
-    fontSize: 11,
+    fontSize: 14,
     fontWeight: '600',
     marginTop: 4,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: 20,
   },
   setupCard: {
     borderRadius: 20,
@@ -794,9 +1006,20 @@ const styles = StyleSheet.create({
   setupTitle: {
     fontSize: 20,
     fontWeight: '700',
+    marginBottom: 4,
+  },
+  setupSubtitle: {
+    fontSize: 14,
+    fontWeight: '500',
   },
   setupInputs: {
     gap: 20,
+  },
+  sectionLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+    marginBottom: 8,
   },
   timeRow: {
     flexDirection: 'row',
@@ -823,6 +1046,11 @@ const styles = StyleSheet.create({
   cigaretteInput: {
     alignItems: 'center',
   },
+  cigaretteLabel: {
+    fontSize: 13,
+    fontWeight: '500',
+    marginBottom: 12,
+  },
   cigarettePicker: {
     borderRadius: 12,
     padding: 16,
@@ -847,6 +1075,45 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#FFFFFF',
   },
+  compactSetupCard: {
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 20,
+  },
+  compactTimeRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  compactTimeInput: {
+    flex: 1,
+  },
+  compactInputLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+    marginBottom: 6,
+  },
+  compactTimePicker: {
+    borderRadius: 10,
+    padding: 12,
+    alignItems: 'center',
+  },
+  compactTimeText: {
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  compactCigaretteInput: {
+    flex: 1,
+  },
+  compactCigarettePicker: {
+    borderRadius: 10,
+    padding: 12,
+    alignItems: 'center',
+  },
+  compactCigaretteNumber: {
+    fontSize: 18,
+    fontWeight: '700',
+  },
   reminderList: {
     gap: 12,
   },
@@ -860,6 +1127,11 @@ const styles = StyleSheet.create({
   reminderItemNext: {
     borderWidth: 2,
     borderColor: 'rgb(29, 200, 130)',
+    shadowColor: 'rgb(29, 200, 130)',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
   },
   reminderContent: {
     flex: 1,

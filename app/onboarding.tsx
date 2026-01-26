@@ -129,7 +129,9 @@ export default function OnboardingScreen() {
       await AsyncStorage.setItem('smoke-onboarding-completed', 'true');
       console.log('OnboardingScreen: Onboarding completed, navigating to home');
       
-      router.replace('/(tabs)/(home)/');
+      setTimeout(() => {
+        router.replace('/(tabs)/(home)/');
+      }, 100);
     } catch (error) {
       console.error('OnboardingScreen: Error during onboarding:', error);
       router.replace('/(tabs)/(home)/');
@@ -325,7 +327,7 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   title: {
-    fontSize: 57,
+    fontSize: 42,
     fontWeight: '900',
     color: '#FFFFFF',
     textAlign: 'left',
@@ -333,14 +335,14 @@ const styles = StyleSheet.create({
   },
   textContainer: {
     alignItems: 'flex-start',
-    gap: 16,
+    gap: 12,
   },
   description: {
-    fontSize: 15,
-    fontWeight: '900',
+    fontSize: 14,
+    fontWeight: '600',
     color: 'rgba(255, 255, 255, 0.95)',
     textAlign: 'left',
-    lineHeight: 28,
+    lineHeight: 22,
   },
   buttonContainer: {
     width: '100%',
@@ -366,7 +368,7 @@ const styles = StyleSheet.create({
     color: 'rgb(15, 105, 65)',
   },
   legalText: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '500',
     color: 'rgba(255, 255, 255, 0.9)',
     textDecorationLine: 'underline',
