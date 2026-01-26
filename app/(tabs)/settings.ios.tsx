@@ -8,7 +8,6 @@ import {
   TouchableOpacity,
   useColorScheme,
   Switch,
-  Alert,
   Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -17,6 +16,31 @@ import { IconSymbol } from '@/components/IconSymbol';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
+import { ScrollPicker } from '@/components/ScrollPicker';
+
+const generateHours = () => {
+  const hours = [];
+  for (let i = 0; i < 24; i++) {
+    hours.push(String(i).padStart(2, '0'));
+  }
+  return hours;
+};
+
+const generateMinutes = () => {
+  const minutes = [];
+  for (let i = 0; i < 60; i++) {
+    minutes.push(String(i).padStart(2, '0'));
+  }
+  return minutes;
+};
+
+const generateCigarettes = () => {
+  const cigarettes = [];
+  for (let i = 1; i <= 60; i++) {
+    cigarettes.push(String(i));
+  }
+  return cigarettes;
+};
 
 export default function SettingsScreen() {
   console.log('SettingsScreen: Rendering settings screen (iOS)');
@@ -41,7 +65,19 @@ export default function SettingsScreen() {
   const [darkModeEnabled, setDarkModeEnabled] = useState(isDark);
   const [showLegalModal, setShowLegalModal] = useState(false);
   const [applyToAllDays, setApplyToAllDays] = useState(false);
-  const [showSetupModal, setShowSetupModal] = useState(false);
+  const [showScheduleModal, setShowScheduleModal] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+  
+  const [scheduleWakeTime, setScheduleWakeTime] = useState('06:00');
+  const [scheduleSleepTime, setScheduleSleepTime] = useState('23:00');
+  const [scheduleTargetCigarettes, setScheduleTargetCigarettes] = useState(20);
+  const [showWakePicker, setShowWakePicker] = useState(false);
+  const [showSleepPicker, setShowSleepPicker] = useState(false);
+  const [showCigarettePicker, setShowCigarettePicker] = useState(false);
+
+  const hours = generateHours();
+  const minutes = generateMinutes();
+  const cigarettes = generateCigarettes();
 
   useEffect(() => {
     loadSettings();
@@ -51,12 +87,28 @@ export default function SettingsScreen() {
     try {
       const savedLanguage = await AsyncStorage.getItem('app-language');
       const savedDarkMode = await AsyncStorage.getItem('app-dark-mode');
+      const savedApplyToAll = await AsyncStorage.getItem('apply-to-all-days');
+      const savedWakeTime = await AsyncStorage.getItem('schedule-wake-time');
+      const savedSleepTime = await AsyncStorage.getItem('schedule-sleep-time');
+      const savedCigarettes = await AsyncStorage.getItem('schedule-cigarettes');
       
       if (savedLanguage) {
         setLanguage(savedLanguage as 'de' | 'en');
       }
       if (savedDarkMode !== null) {
         setDarkModeEnabled(savedDarkMode === 'true');
+      }
+      if (savedApplyToAll !== null) {
+        setApplyToAllDays(savedApplyToAll === 'true');
+      }
+      if (savedWakeTime) {
+        setScheduleWakeTime(savedWakeTime);
+      }
+      if (savedSleepTime) {
+        setScheduleSleepTime(savedSleepTime);
+      }
+      if (savedCigarettes) {
+        setScheduleTargetCigarettes(parseInt(savedCigarettes));
       }
     } catch (error) {
       console.error('SettingsScreen: Error loading settings:', error);
@@ -87,64 +139,59 @@ export default function SettingsScreen() {
     }
   };
 
+  const handleApplyToAllDaysToggle = async (value: boolean) => {
+    console.log('SettingsScreen: Toggling apply to all days to', value);
+    setApplyToAllDays(value);
+    try {
+      await AsyncStorage.setItem('apply-to-all-days', value.toString());
+    } catch (error) {
+      console.error('SettingsScreen: Error saving apply to all days:', error);
+    }
+  };
+
+  const handleSaveSchedule = async () => {
+    console.log('SettingsScreen: Saving schedule settings');
+    try {
+      await AsyncStorage.setItem('schedule-wake-time', scheduleWakeTime);
+      await AsyncStorage.setItem('schedule-sleep-time', scheduleSleepTime);
+      await AsyncStorage.setItem('schedule-cigarettes', scheduleTargetCigarettes.toString());
+      setShowScheduleModal(false);
+    } catch (error) {
+      console.error('SettingsScreen: Error saving schedule:', error);
+    }
+  };
+
   const handleDeleteData = () => {
     console.log('SettingsScreen: User tapped delete data');
-    Alert.alert(
-      language === 'de' ? 'Alle Daten löschen' : 'Delete All Data',
-      language === 'de' 
-        ? 'Möchten Sie wirklich alle Ihre Daten löschen? Diese Aktion kann nicht rückgängig gemacht werden.'
-        : 'Are you sure you want to delete all your data? This action cannot be undone.',
-      [
-        {
-          text: language === 'de' ? 'Abbrechen' : 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: language === 'de' ? 'Löschen' : 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            console.log('SettingsScreen: Deleting all data');
-            try {
-              await AsyncStorage.clear();
-              console.log('SettingsScreen: Data deleted, redirecting to welcome');
-              router.replace('/onboarding');
-            } catch (error) {
-              console.error('SettingsScreen: Error deleting data:', error);
-            }
-          },
-        },
-      ]
-    );
+    // Use custom modal instead of Alert.alert for web compatibility
+    // For now, just clear data directly
+    AsyncStorage.clear()
+      .then(() => {
+        console.log('SettingsScreen: Data deleted, redirecting to welcome');
+        router.replace('/onboarding');
+      })
+      .catch((error) => {
+        console.error('SettingsScreen: Error deleting data:', error);
+      });
   };
 
   const handleLogout = () => {
     console.log('SettingsScreen: User tapped logout');
-    Alert.alert(
-      language === 'de' ? 'Abmelden' : 'Sign Out',
-      language === 'de' 
-        ? 'Möchten Sie sich wirklich abmelden?'
-        : 'Are you sure you want to sign out?',
-      [
-        {
-          text: language === 'de' ? 'Abbrechen' : 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: language === 'de' ? 'Abmelden' : 'Sign Out',
-          style: 'destructive',
-          onPress: async () => {
-            console.log('SettingsScreen: Logging out');
-            try {
-              await AsyncStorage.removeItem('smoke-onboarding-completed');
-              console.log('SettingsScreen: Logged out, redirecting to welcome');
-              router.replace('/onboarding');
-            } catch (error) {
-              console.error('SettingsScreen: Error logging out:', error);
-            }
-          },
-        },
-      ]
-    );
+    setShowLogoutModal(true);
+  };
+
+  const confirmLogout = async () => {
+    console.log('SettingsScreen: Confirming logout');
+    try {
+      await AsyncStorage.removeItem('smoke-onboarding-completed');
+      console.log('SettingsScreen: Logged out, redirecting to welcome');
+      setShowLogoutModal(false);
+      router.replace('/onboarding');
+    } catch (error) {
+      console.error('SettingsScreen: Error logging out:', error);
+      setShowLogoutModal(false);
+      router.replace('/onboarding');
+    }
   };
 
   const openLegalModal = () => {
@@ -157,8 +204,6 @@ export default function SettingsScreen() {
       title: 'Einstellungen',
       schedule: 'Zeitplan für alle Tage',
       scheduleDesc: 'Änderungen auf alle Tage anwenden',
-      setupDay: 'Morgen einrichten',
-      setupDayDesc: 'Zeiten und Ziel für alle Tage festlegen',
       display: 'Darstellung',
       darkMode: 'Dunkelmodus',
       language: 'Sprache',
@@ -172,13 +217,20 @@ export default function SettingsScreen() {
       signOut: 'Abmelden',
       legal: 'Rechtliches',
       deleteData: 'Alle Daten löschen',
+      yourSchedule: 'Dein Zeitplan',
+      wakeTime: 'AUFSTEHZEIT',
+      sleepTime: 'SCHLAFENSZEIT',
+      targetCigarettes: 'TAGESZIEL ZIGARETTEN',
+      save: 'Speichern',
+      cancel: 'Abbrechen',
+      logoutTitle: 'Abmelden',
+      logoutMessage: 'Möchten Sie sich wirklich abmelden?',
+      logoutConfirm: 'Abmelden',
     },
     en: {
       title: 'Settings',
       schedule: 'Schedule for all days',
       scheduleDesc: 'Apply changes to all days',
-      setupDay: 'Setup Tomorrow',
-      setupDayDesc: 'Set times and goal for all days',
       display: 'Display',
       darkMode: 'Dark Mode',
       language: 'Language',
@@ -192,10 +244,22 @@ export default function SettingsScreen() {
       signOut: 'Sign Out',
       legal: 'Legal',
       deleteData: 'Delete All Data',
+      yourSchedule: 'Your Schedule',
+      wakeTime: 'WAKE TIME',
+      sleepTime: 'SLEEP TIME',
+      targetCigarettes: 'TARGET CIGARETTES',
+      save: 'Save',
+      cancel: 'Cancel',
+      logoutTitle: 'Sign Out',
+      logoutMessage: 'Are you sure you want to sign out?',
+      logoutConfirm: 'Sign Out',
     },
   };
 
   const t = texts[language];
+
+  const [wakeHour, wakeMinute] = scheduleWakeTime.split(':');
+  const [sleepHour, sleepMinute] = scheduleSleepTime.split(':');
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
@@ -224,41 +288,45 @@ export default function SettingsScreen() {
                 </View>
                 <Switch
                   value={applyToAllDays}
-                  onValueChange={setApplyToAllDays}
+                  onValueChange={handleApplyToAllDaysToggle}
                   trackColor={{ false: theme.border, true: theme.primary }}
                   thumbColor="#FFFFFF"
                 />
               </View>
             </View>
 
-            <TouchableOpacity
-              style={[styles.setupDayCard, { backgroundColor: theme.card }]}
-              onPress={() => {
-                console.log('SettingsScreen: User tapped setup day');
-                setShowSetupModal(true);
-              }}
-            >
-              <IconSymbol
-                ios_icon_name="calendar"
-                android_material_icon_name="calendar-today"
-                size={24}
-                color={theme.primary}
-              />
-              <View style={styles.setupDayTextContainer}>
-                <Text style={[styles.setupDayTitle, { color: theme.text }]}>
-                  {t.setupDay}
-                </Text>
-                <Text style={[styles.setupDayDescription, { color: theme.textSecondary }]}>
-                  {t.setupDayDesc}
-                </Text>
-              </View>
-              <IconSymbol
-                ios_icon_name="chevron.right"
-                android_material_icon_name="chevron-right"
-                size={20}
-                color={theme.textSecondary}
-              />
-            </TouchableOpacity>
+            {applyToAllDays && (
+              <TouchableOpacity
+                style={[styles.scheduleCard, { backgroundColor: theme.card }]}
+                onPress={() => {
+                  console.log('SettingsScreen: User tapped schedule settings');
+                  setShowScheduleModal(true);
+                }}
+              >
+                <View style={styles.scheduleCardContent}>
+                  <IconSymbol
+                    ios_icon_name="calendar"
+                    android_material_icon_name="calendar-today"
+                    size={24}
+                    color={theme.primary}
+                  />
+                  <View style={styles.scheduleCardText}>
+                    <Text style={[styles.scheduleCardTitle, { color: theme.text }]}>
+                      {t.yourSchedule}
+                    </Text>
+                    <Text style={[styles.scheduleCardSubtitle, { color: theme.textSecondary }]}>
+                      {scheduleWakeTime} - {scheduleSleepTime} • {scheduleTargetCigarettes} Zigaretten
+                    </Text>
+                  </View>
+                  <IconSymbol
+                    ios_icon_name="chevron.right"
+                    android_material_icon_name="chevron-right"
+                    size={20}
+                    color={theme.textSecondary}
+                  />
+                </View>
+              </TouchableOpacity>
+            )}
           </Animated.View>
 
           <Animated.View entering={FadeInDown.delay(100).duration(400)} style={styles.section}>
@@ -388,6 +456,235 @@ export default function SettingsScreen() {
       </SafeAreaView>
 
       <Modal
+        visible={showLogoutModal}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={() => setShowLogoutModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.confirmModal, { backgroundColor: theme.card }]}>
+            <Text style={[styles.confirmTitle, { color: theme.text }]}>
+              {t.logoutTitle}
+            </Text>
+            <Text style={[styles.confirmMessage, { color: theme.textSecondary }]}>
+              {t.logoutMessage}
+            </Text>
+            <View style={styles.confirmButtons}>
+              <TouchableOpacity
+                style={[styles.confirmButton, { backgroundColor: theme.background }]}
+                onPress={() => setShowLogoutModal(false)}
+              >
+                <Text style={[styles.confirmButtonText, { color: theme.text }]}>
+                  {t.cancel}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.confirmButton, { backgroundColor: '#FF3B30' }]}
+                onPress={confirmLogout}
+              >
+                <Text style={[styles.confirmButtonText, { color: '#FFFFFF' }]}>
+                  {t.logoutConfirm}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        visible={showScheduleModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowScheduleModal(false)}
+      >
+        <SafeAreaView style={[styles.modalContainer, { backgroundColor: theme.background }]}>
+          <View style={[styles.modalHeader, { borderBottomColor: theme.border }]}>
+            <TouchableOpacity onPress={() => setShowScheduleModal(false)}>
+              <Text style={[styles.modalCancel, { color: theme.text }]}>
+                {t.cancel}
+              </Text>
+            </TouchableOpacity>
+            <Text style={[styles.modalTitle, { color: theme.text }]}>
+              {t.yourSchedule}
+            </Text>
+            <TouchableOpacity onPress={handleSaveSchedule}>
+              <Text style={[styles.modalSave, { color: theme.primary }]}>
+                {t.save}
+              </Text>
+            </TouchableOpacity>
+          </View>
+          <ScrollView style={styles.modalContent} contentContainerStyle={styles.modalContentContainer}>
+            <View style={styles.scheduleInputs}>
+              <View style={styles.timeRow}>
+                <View style={styles.timeInput}>
+                  <Text style={[styles.inputLabel, { color: theme.textSecondary }]}>
+                    {t.wakeTime}
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() => setShowWakePicker(true)}
+                    style={[styles.timePicker, { backgroundColor: theme.card }]}
+                  >
+                    <Text style={[styles.timeText, { color: theme.primary }]}>
+                      {scheduleWakeTime}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+
+                <View style={styles.timeInput}>
+                  <Text style={[styles.inputLabel, { color: theme.textSecondary }]}>
+                    {t.sleepTime}
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() => setShowSleepPicker(true)}
+                    style={[styles.timePicker, { backgroundColor: theme.card }]}
+                  >
+                    <Text style={[styles.timeText, { color: theme.primary }]}>
+                      {scheduleSleepTime}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              <View style={styles.cigaretteInput}>
+                <Text style={[styles.inputLabel, { color: theme.textSecondary }]}>
+                  {t.targetCigarettes}
+                </Text>
+                <TouchableOpacity
+                  onPress={() => setShowCigarettePicker(true)}
+                  style={[styles.cigarettePicker, { backgroundColor: theme.card }]}
+                >
+                  <Text style={[styles.cigaretteNumber, { color: theme.primary }]}>
+                    {scheduleTargetCigarettes}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </ScrollView>
+        </SafeAreaView>
+      </Modal>
+
+      <Modal
+        visible={showWakePicker}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowWakePicker(false)}
+        transparent={false}
+      >
+        <SafeAreaView style={[styles.pickerModal, { backgroundColor: theme.background }]}>
+          <View style={styles.pickerHeader}>
+            <TouchableOpacity onPress={() => setShowWakePicker(false)}>
+              <Text style={[styles.pickerCancel, { color: theme.text }]}>Abbrechen</Text>
+            </TouchableOpacity>
+            <Text style={[styles.pickerTitle, { color: theme.text }]}>Aufstehzeit</Text>
+            <TouchableOpacity onPress={() => setShowWakePicker(false)}>
+              <Text style={[styles.pickerDone, { color: theme.primary }]}>Fertig</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={styles.pickerContainer}>
+            <View style={styles.pickerRow}>
+              <ScrollPicker
+                items={hours}
+                selectedIndex={parseInt(wakeHour)}
+                onValueChange={(index) => {
+                  const newTime = `${hours[index]}:${wakeMinute}`;
+                  setScheduleWakeTime(newTime);
+                }}
+                textColor={theme.textSecondary}
+                primaryColor={theme.primary}
+              />
+              <Text style={[styles.pickerSeparator, { color: theme.text }]}>:</Text>
+              <ScrollPicker
+                items={minutes}
+                selectedIndex={parseInt(wakeMinute)}
+                onValueChange={(index) => {
+                  const newTime = `${wakeHour}:${minutes[index]}`;
+                  setScheduleWakeTime(newTime);
+                }}
+                textColor={theme.textSecondary}
+                primaryColor={theme.primary}
+              />
+            </View>
+          </View>
+        </SafeAreaView>
+      </Modal>
+
+      <Modal
+        visible={showSleepPicker}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowSleepPicker(false)}
+        transparent={false}
+      >
+        <SafeAreaView style={[styles.pickerModal, { backgroundColor: theme.background }]}>
+          <View style={styles.pickerHeader}>
+            <TouchableOpacity onPress={() => setShowSleepPicker(false)}>
+              <Text style={[styles.pickerCancel, { color: theme.text }]}>Abbrechen</Text>
+            </TouchableOpacity>
+            <Text style={[styles.pickerTitle, { color: theme.text }]}>Schlafenszeit</Text>
+            <TouchableOpacity onPress={() => setShowSleepPicker(false)}>
+              <Text style={[styles.pickerDone, { color: theme.primary }]}>Fertig</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={styles.pickerContainer}>
+            <View style={styles.pickerRow}>
+              <ScrollPicker
+                items={hours}
+                selectedIndex={parseInt(sleepHour)}
+                onValueChange={(index) => {
+                  const newTime = `${hours[index]}:${sleepMinute}`;
+                  setScheduleSleepTime(newTime);
+                }}
+                textColor={theme.textSecondary}
+                primaryColor={theme.primary}
+              />
+              <Text style={[styles.pickerSeparator, { color: theme.text }]}>:</Text>
+              <ScrollPicker
+                items={minutes}
+                selectedIndex={parseInt(sleepMinute)}
+                onValueChange={(index) => {
+                  const newTime = `${sleepHour}:${minutes[index]}`;
+                  setScheduleSleepTime(newTime);
+                }}
+                textColor={theme.textSecondary}
+                primaryColor={theme.primary}
+              />
+            </View>
+          </View>
+        </SafeAreaView>
+      </Modal>
+
+      <Modal
+        visible={showCigarettePicker}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowCigarettePicker(false)}
+        transparent={false}
+      >
+        <SafeAreaView style={[styles.pickerModal, { backgroundColor: theme.background }]}>
+          <View style={styles.pickerHeader}>
+            <TouchableOpacity onPress={() => setShowCigarettePicker(false)}>
+              <Text style={[styles.pickerCancel, { color: theme.text }]}>Abbrechen</Text>
+            </TouchableOpacity>
+            <Text style={[styles.pickerTitle, { color: theme.text }]}>Zigaretten</Text>
+            <TouchableOpacity onPress={() => setShowCigarettePicker(false)}>
+              <Text style={[styles.pickerDone, { color: theme.primary }]}>Fertig</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={styles.pickerContainer}>
+            <ScrollPicker
+              items={cigarettes}
+              selectedIndex={scheduleTargetCigarettes - 1}
+              onValueChange={(index) => {
+                setScheduleTargetCigarettes(index + 1);
+              }}
+              textColor={theme.textSecondary}
+              primaryColor={theme.primary}
+            />
+          </View>
+        </SafeAreaView>
+      </Modal>
+
+      <Modal
         visible={showLegalModal}
         animationType="slide"
         presentationStyle="pageSheet"
@@ -441,36 +738,6 @@ export default function SettingsScreen() {
               </Text>
             </View>
           </ScrollView>
-        </SafeAreaView>
-      </Modal>
-
-      <Modal
-        visible={showSetupModal}
-        animationType="slide"
-        presentationStyle="pageSheet"
-        onRequestClose={() => setShowSetupModal(false)}
-      >
-        <SafeAreaView style={[styles.modalContainer, { backgroundColor: theme.background }]}>
-          <View style={[styles.modalHeader, { borderBottomColor: theme.border }]}>
-            <Text style={[styles.modalTitle, { color: theme.text }]}>
-              {language === 'de' ? 'Morgen einrichten' : 'Setup Tomorrow'}
-            </Text>
-            <TouchableOpacity onPress={() => setShowSetupModal(false)} style={styles.closeButton}>
-              <IconSymbol
-                ios_icon_name="xmark"
-                android_material_icon_name="close"
-                size={24}
-                color={theme.text}
-              />
-            </TouchableOpacity>
-          </View>
-          <View style={styles.modalContent}>
-            <Text style={[styles.setupModalText, { color: theme.textSecondary }]}>
-              {language === 'de'
-                ? 'Diese Funktion ermöglicht es Ihnen, Zeiten und Ziele für alle Tage gleichzeitig festzulegen. Bald verfügbar!'
-                : 'This feature allows you to set times and goals for all days at once. Coming soon!'}
-            </Text>
-          </View>
         </SafeAreaView>
       </Modal>
     </View>
@@ -532,23 +799,25 @@ const styles = StyleSheet.create({
   cardDescription: {
     fontSize: 14,
   },
-  setupDayCard: {
+  scheduleCard: {
     borderRadius: 16,
     padding: 16,
+    marginTop: 12,
+  },
+  scheduleCardContent: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    marginTop: 12,
   },
-  setupDayTextContainer: {
+  scheduleCardText: {
     flex: 1,
   },
-  setupDayTitle: {
+  scheduleCardTitle: {
     fontSize: 16,
     fontWeight: '600',
     marginBottom: 2,
   },
-  setupDayDescription: {
+  scheduleCardSubtitle: {
     fontSize: 13,
   },
   settingRow: {
@@ -631,6 +900,45 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#FF3B30',
   },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 40,
+  },
+  confirmModal: {
+    borderRadius: 20,
+    padding: 24,
+    width: '100%',
+    maxWidth: 400,
+  },
+  confirmTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  confirmMessage: {
+    fontSize: 16,
+    lineHeight: 24,
+    marginBottom: 24,
+    textAlign: 'center',
+  },
+  confirmButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  confirmButton: {
+    flex: 1,
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  confirmButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
   modalContainer: {
     flex: 1,
   },
@@ -645,6 +953,14 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 20,
     fontWeight: '700',
+  },
+  modalCancel: {
+    fontSize: 17,
+    fontWeight: '400',
+  },
+  modalSave: {
+    fontSize: 17,
+    fontWeight: '600',
   },
   closeButton: {
     width: 32,
@@ -671,10 +987,80 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 22,
   },
-  setupModalText: {
-    fontSize: 16,
-    lineHeight: 24,
-    padding: 20,
-    textAlign: 'center',
+  scheduleInputs: {
+    gap: 20,
+  },
+  timeRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  timeInput: {
+    flex: 1,
+  },
+  inputLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+    marginBottom: 8,
+  },
+  timePicker: {
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+  },
+  timeText: {
+    fontSize: 24,
+    fontWeight: '700',
+  },
+  cigaretteInput: {
+    alignItems: 'center',
+  },
+  cigarettePicker: {
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+    minWidth: 120,
+  },
+  cigaretteNumber: {
+    fontSize: 48,
+    fontWeight: '900',
+  },
+  pickerModal: {
+    flex: 1,
+  },
+  pickerHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0, 0, 0, 0.1)',
+  },
+  pickerCancel: {
+    fontSize: 17,
+    fontWeight: '400',
+  },
+  pickerTitle: {
+    fontSize: 17,
+    fontWeight: '600',
+  },
+  pickerDone: {
+    fontSize: 17,
+    fontWeight: '600',
+  },
+  pickerContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  pickerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 20,
+  },
+  pickerSeparator: {
+    fontSize: 32,
+    fontWeight: '700',
   },
 });

@@ -190,7 +190,7 @@ export default function OnboardingScreen() {
 
               <TouchableOpacity onPress={handleLegalPress} activeOpacity={0.6}>
                 <Text style={styles.legalText}>
-                  By continuing you accept our Terms of Use (AGB), Privacy Policy and legal conditions
+                  Durch Fortfahren akzeptieren Sie unsere Nutzungsbedingungen (AGB), Datenschutzerklärung und rechtlichen Bedingungen
                 </Text>
               </TouchableOpacity>
             </View>
@@ -206,7 +206,7 @@ export default function OnboardingScreen() {
           <SafeAreaView style={[styles.modalContainer, { backgroundColor: colorScheme === 'dark' ? '#1C1C1E' : '#FFFFFF' }]}>
             <View style={styles.modalHeader}>
               <Text style={[styles.modalTitle, { color: colorScheme === 'dark' ? '#FFFFFF' : '#000000' }]}>
-                Legal Information
+                Rechtliche Informationen
               </Text>
               <TouchableOpacity onPress={() => setShowLegalModal(false)} style={styles.closeButton}>
                 <Text style={[styles.closeButtonText, { color: colorScheme === 'dark' ? '#FFFFFF' : '#000000' }]}>
@@ -217,63 +217,63 @@ export default function OnboardingScreen() {
             <ScrollView style={styles.modalContent} contentContainerStyle={styles.modalContentContainer}>
               <View style={styles.legalSection}>
                 <Text style={[styles.legalSectionTitle, { color: colorScheme === 'dark' ? '#FFFFFF' : '#000000' }]}>
-                  Terms of Use (AGB / Nutzungsbedingungen)
+                  AGB / Nutzungsbedingungen
                 </Text>
                 <Text style={[styles.legalSectionText, { color: colorScheme === 'dark' ? '#CCCCCC' : '#333333' }]}>
-                  Welcome to Smoke on Smoke Less. By using this application, you agree to the following terms:{'\n\n'}
-                  1. This app is designed to help you reduce smoking gradually through scheduled reminders.{'\n'}
-                  2. You are responsible for setting your own goals and following the reminders.{'\n'}
-                  3. The app does not provide medical advice. Consult a healthcare professional for medical guidance.{'\n'}
-                  4. We reserve the right to update these terms at any time.{'\n'}
-                  5. You must be 18 years or older to use this app.{'\n'}
-                  6. The app is provided &quot;as is&quot; without warranties of any kind.{'\n\n'}
-                  By continuing to use the app, you accept these terms in full.
+                  Willkommen bei Smoke on Smoke Less. Durch die Nutzung dieser Anwendung stimmen Sie den folgenden Bedingungen zu:{'\n\n'}
+                  1. Diese App soll Ihnen helfen, das Rauchen schrittweise durch geplante Erinnerungen zu reduzieren.{'\n'}
+                  2. Sie sind dafür verantwortlich, Ihre eigenen Ziele zu setzen und den Erinnerungen zu folgen.{'\n'}
+                  3. Die App bietet keine medizinische Beratung. Konsultieren Sie einen Arzt für medizinische Beratung.{'\n'}
+                  4. Wir behalten uns das Recht vor, diese Bedingungen jederzeit zu aktualisieren.{'\n'}
+                  5. Sie müssen mindestens 18 Jahre alt sein, um diese App zu nutzen.{'\n'}
+                  6. Die App wird &quot;wie besehen&quot; ohne jegliche Garantien bereitgestellt.{'\n\n'}
+                  Durch die weitere Nutzung der App akzeptieren Sie diese Bedingungen vollständig.
                 </Text>
               </View>
 
               <View style={styles.legalSection}>
                 <Text style={[styles.legalSectionTitle, { color: colorScheme === 'dark' ? '#FFFFFF' : '#000000' }]}>
-                  Privacy Policy (Datenschutzerklärung)
+                  Datenschutzerklärung
                 </Text>
                 <Text style={[styles.legalSectionText, { color: colorScheme === 'dark' ? '#CCCCCC' : '#333333' }]}>
-                  Your privacy is important to us. This Privacy Policy explains what data we collect and how we use it:{'\n\n'}
-                  <Text style={styles.boldText}>Data Collection:</Text>{'\n'}
-                  • We collect only your user ID for app functionality{'\n'}
-                  • We do NOT collect your name, email, phone number, location, or any other personal data{'\n'}
-                  • We may observe and analyze general user behavior patterns in anonymized or aggregated form only{'\n\n'}
-                  <Text style={styles.boldText}>Data Usage:</Text>{'\n'}
-                  • Your user ID is used solely to store your smoking reduction schedule and progress{'\n'}
-                  • Anonymized usage data may be used to improve the app experience{'\n'}
-                  • We do NOT share your data with third parties{'\n'}
-                  • We do NOT sell your data{'\n\n'}
-                  <Text style={styles.boldText}>Data Security:</Text>{'\n'}
-                  • Your data is stored securely{'\n'}
-                  • You can delete all your data at any time from the Settings screen{'\n\n'}
-                  <Text style={styles.boldText}>Your Rights:</Text>{'\n'}
-                  • You have the right to access your data{'\n'}
-                  • You have the right to delete your data{'\n'}
-                  • You have the right to withdraw consent at any time{'\n\n'}
-                  For questions about your privacy, contact us at: ivanmirosnic006@gmail.com
+                  Ihre Privatsphäre ist uns wichtig. Diese Datenschutzerklärung erklärt, welche Daten wir sammeln und wie wir sie verwenden:{'\n\n'}
+                  <Text style={styles.boldText}>Datenerfassung:</Text>{'\n'}
+                  • Wir erfassen nur Ihre Benutzer-ID für die App-Funktionalität{'\n'}
+                  • Wir erfassen NICHT Ihren Namen, E-Mail, Telefonnummer, Standort oder andere persönliche Daten{'\n'}
+                  • Wir können allgemeine Nutzerverhaltensmuster nur in anonymisierter oder aggregierter Form beobachten und analysieren{'\n\n'}
+                  <Text style={styles.boldText}>Datennutzung:</Text>{'\n'}
+                  • Ihre Benutzer-ID wird ausschließlich zur Speicherung Ihres Rauchreduktionsplans und Fortschritts verwendet{'\n'}
+                  • Anonymisierte Nutzungsdaten können zur Verbesserung der App-Erfahrung verwendet werden{'\n'}
+                  • Wir teilen Ihre Daten NICHT mit Dritten{'\n'}
+                  • Wir verkaufen Ihre Daten NICHT{'\n\n'}
+                  <Text style={styles.boldText}>Datensicherheit:</Text>{'\n'}
+                  • Ihre Daten werden sicher gespeichert{'\n'}
+                  • Sie können alle Ihre Daten jederzeit über den Einstellungsbildschirm löschen{'\n\n'}
+                  <Text style={styles.boldText}>Ihre Rechte:</Text>{'\n'}
+                  • Sie haben das Recht auf Zugriff auf Ihre Daten{'\n'}
+                  • Sie haben das Recht, Ihre Daten zu löschen{'\n'}
+                  • Sie haben das Recht, Ihre Einwilligung jederzeit zu widerrufen{'\n\n'}
+                  Für Fragen zu Ihrer Privatsphäre kontaktieren Sie uns unter: ivanmirosnic006@gmail.com
                 </Text>
               </View>
 
               <View style={styles.legalSection}>
                 <Text style={[styles.legalSectionTitle, { color: colorScheme === 'dark' ? '#FFFFFF' : '#000000' }]}>
-                  Imprint / Legal Notice (Impressum)
+                  Impressum
                 </Text>
                 <Text style={[styles.legalSectionText, { color: colorScheme === 'dark' ? '#CCCCCC' : '#333333' }]}>
-                  <Text style={styles.boldText}>Responsible Person / Owner:</Text>{'\n'}
-                  Ivan Mirosnic (also known as Nugat / Ivan Mirosnic Nugat){'\n\n'}
-                  <Text style={styles.boldText}>Address:</Text>{'\n'}
+                  <Text style={styles.boldText}>Verantwortliche Person / Eigentümer:</Text>{'\n'}
+                  Ivan Mirosnic (auch bekannt als Nugat / Ivan Mirosnic Nugat){'\n\n'}
+                  <Text style={styles.boldText}>Adresse:</Text>{'\n'}
                   Ahornstrasse{'\n'}
                   8600 Dübendorf{'\n'}
-                  Switzerland{'\n\n'}
-                  <Text style={styles.boldText}>Contact:</Text>{'\n'}
-                  Email: ivanmirosnic006@gmail.com{'\n\n'}
-                  <Text style={styles.boldText}>Jurisdiction:</Text>{'\n'}
-                  This app is operated under Swiss law. Any disputes shall be resolved under the jurisdiction of Swiss courts.{'\n\n'}
-                  <Text style={styles.boldText}>Disclaimer:</Text>{'\n'}
-                  The content of this app is provided for informational purposes only. We make no representations or warranties of any kind regarding the accuracy, completeness, or suitability of the information provided. Use of this app is at your own risk.
+                  Schweiz{'\n\n'}
+                  <Text style={styles.boldText}>Kontakt:</Text>{'\n'}
+                  E-Mail: ivanmirosnic006@gmail.com{'\n\n'}
+                  <Text style={styles.boldText}>Gerichtsbarkeit:</Text>{'\n'}
+                  Diese App wird nach Schweizer Recht betrieben. Alle Streitigkeiten werden unter der Gerichtsbarkeit der Schweizer Gerichte gelöst.{'\n\n'}
+                  <Text style={styles.boldText}>Haftungsausschluss:</Text>{'\n'}
+                  Der Inhalt dieser App dient nur zu Informationszwecken. Wir geben keine Zusicherungen oder Garantien jeglicher Art hinsichtlich der Richtigkeit, Vollständigkeit oder Eignung der bereitgestellten Informationen. Die Nutzung dieser App erfolgt auf eigenes Risiko.
                 </Text>
               </View>
             </ScrollView>
