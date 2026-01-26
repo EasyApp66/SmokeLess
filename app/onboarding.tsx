@@ -181,8 +181,8 @@ export default function OnboardingScreen() {
         <SafeAreaView style={styles.container}>
           <View style={styles.content}>
             <View style={styles.titleContainer}>
-              <Text style={styles.title}>{titleLine1}</Text>
-              <Text style={styles.title}>{titleLine2}</Text>
+              <Text style={styles.title} numberOfLines={1} adjustsFontSizeToFit>{titleLine1}</Text>
+              <Text style={styles.title} numberOfLines={1} adjustsFontSizeToFit>{titleLine2}</Text>
             </View>
             
             <View style={styles.textContainer}>
@@ -340,13 +340,14 @@ const styles = StyleSheet.create({
   titleContainer: {
     alignItems: 'flex-start',
     marginTop: 20,
+    width: '100%',
   },
   title: {
-    fontSize: 57,
+    fontSize: 42,
     fontWeight: '900',
     color: '#FFFFFF',
     textAlign: 'left',
-    letterSpacing: -1,
+    letterSpacing: -0.5,
   },
   textContainer: {
     alignItems: 'flex-start',
