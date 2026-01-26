@@ -75,7 +75,7 @@ export default function OnboardingScreen() {
       -1,
       false
     );
-  }, []);
+  }, [orb1Scale, orb1Opacity, orb2Scale, orb2Opacity]);
 
   const orb1Style = useAnimatedStyle(() => {
     return {
@@ -328,7 +328,7 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   title: {
-    fontSize: 59,
+    fontSize: 57,
     fontWeight: '900',
     color: '#FFFFFF',
     textAlign: 'left',

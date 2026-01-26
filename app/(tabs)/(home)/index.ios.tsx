@@ -11,6 +11,7 @@ import {
   Dimensions,
   TextInput,
   ActivityIndicator,
+  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, {
@@ -23,12 +24,12 @@ import Animated, {
   Easing,
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
-import DateTimePicker from '@react-native-community/datetimepicker';
 import * as Haptics from 'expo-haptics';
 import { colors } from '@/styles/commonStyles';
 import { IconSymbol } from '@/components/IconSymbol';
 import { dayApi, reminderApi, Day, Reminder } from '@/utils/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { ScrollPicker } from '@/components/ScrollPicker';
 
 const { width } = Dimensions.get('window');
 
@@ -42,6 +43,30 @@ interface DayData {
 }
 
 const WEEKDAYS = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
+
+const generateHours = () => {
+  const hours = [];
+  for (let i = 0; i < 24; i++) {
+    hours.push(String(i).padStart(2, '0'));
+  }
+  return hours;
+};
+
+const generateMinutes = () => {
+  const minutes = [];
+  for (let i = 0; i < 60; i++) {
+    minutes.push(String(i).padStart(2, '0'));
+  }
+  return minutes;
+};
+
+const generateCigarettes = () => {
+  const cigarettes = [];
+  for (let i = 1; i <= 60; i++) {
+    cigarettes.push(String(i));
+  }
+  return cigarettes;
+};
 
 export default function HomeScreen() {
   console.log('HomeScreen: Rendering home screen (iOS)');
@@ -68,9 +93,14 @@ export default function HomeScreen() {
   const [targetCigarettes, setTargetCigarettes] = useState(20);
   const [showWakePicker, setShowWakePicker] = useState(false);
   const [showSleepPicker, setShowSleepPicker] = useState(false);
+  const [showCigarettePicker, setShowCigarettePicker] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const hours = generateHours();
+  const minutes = generateMinutes();
+  const cigarettes = generateCigarettes();
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -251,12 +281,8 @@ export default function HomeScreen() {
     statusText = `Noch ${remainingCount} übrig`;
   }
 
-  const parseTime = (timeStr: string): Date => {
-    const [hour, min] = timeStr.split(':').map(Number);
-    const date = new Date();
-    date.setHours(hour, min, 0, 0);
-    return date;
-  };
+  const [wakeHour, wakeMinute] = wakeTime.split(':');
+  const [sleepHour, sleepMinute] = sleepTime.split(':');
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
@@ -422,48 +448,17 @@ export default function HomeScreen() {
                   <Text style={[styles.inputLabel, { color: theme.textSecondary }]}>
                     TAGESZIEL ZIGARETTEN
                   </Text>
-                  <Text style={[styles.cigaretteLabel, { color: theme.textSecondary }]}>
-                    Zigaretten pro Tag
-                  </Text>
-                  <View style={styles.cigaretteControls}>
-                    <TouchableOpacity
-                      onPress={() => {
-                        if (targetCigarettes > 1) {
-                          console.log('HomeScreen: Decreasing target cigarettes');
-                          setTargetCigarettes(targetCigarettes - 1);
-                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                        }
-                      }}
-                      style={[styles.cigaretteButton, { backgroundColor: theme.background }]}
-                    >
-                      <IconSymbol
-                        ios_icon_name="minus"
-                        android_material_icon_name="remove"
-                        size={24}
-                        color={theme.text}
-                      />
-                    </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => {
+                      console.log('HomeScreen: User tapped cigarette picker');
+                      setShowCigarettePicker(true);
+                    }}
+                    style={[styles.cigarettePicker, { backgroundColor: theme.background }]}
+                  >
                     <Text style={[styles.cigaretteNumber, { color: theme.primary }]}>
                       {targetCigarettes}
                     </Text>
-                    <TouchableOpacity
-                      onPress={() => {
-                        if (targetCigarettes < 60) {
-                          console.log('HomeScreen: Increasing target cigarettes');
-                          setTargetCigarettes(targetCigarettes + 1);
-                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                        }
-                      }}
-                      style={[styles.cigaretteButton, { backgroundColor: theme.background }]}
-                    >
-                      <IconSymbol
-                        ios_icon_name="plus"
-                        android_material_icon_name="add"
-                        size={24}
-                        color={theme.text}
-                      />
-                    </TouchableOpacity>
-                  </View>
+                  </TouchableOpacity>
                 </View>
 
                 <TouchableOpacity
@@ -563,39 +558,141 @@ export default function HomeScreen() {
         </ScrollView>
       </SafeAreaView>
 
-      {showWakePicker && (
-        <DateTimePicker
-          value={parseTime(wakeTime)}
-          mode="time"
-          is24Hour={true}
-          display="spinner"
-          onChange={(event, date) => {
-            setShowWakePicker(Platform.OS === 'ios');
-            if (date) {
-              const timeStr = `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
-              console.log('HomeScreen: Wake time changed to', timeStr);
-              setWakeTime(timeStr);
-            }
-          }}
-        />
-      )}
+      <Modal
+        visible={showWakePicker}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowWakePicker(false)}
+        transparent={false}
+      >
+        <SafeAreaView style={[styles.pickerModal, { backgroundColor: theme.background }]}>
+          <View style={styles.pickerHeader}>
+            <TouchableOpacity onPress={() => setShowWakePicker(false)}>
+              <Text style={[styles.pickerCancel, { color: theme.text }]}>Abbrechen</Text>
+            </TouchableOpacity>
+            <Text style={[styles.pickerTitle, { color: theme.text }]}>Aufstehzeit</Text>
+            <TouchableOpacity
+              onPress={() => {
+                console.log('HomeScreen: Wake time set to', wakeTime);
+                setShowWakePicker(false);
+              }}
+            >
+              <Text style={[styles.pickerDone, { color: theme.primary }]}>Fertig</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={styles.pickerContainer}>
+            <View style={styles.pickerRow}>
+              <ScrollPicker
+                items={hours}
+                selectedIndex={parseInt(wakeHour)}
+                onValueChange={(index) => {
+                  const newTime = `${hours[index]}:${wakeMinute}`;
+                  setWakeTime(newTime);
+                }}
+                textColor={theme.textSecondary}
+                primaryColor={theme.primary}
+              />
+              <Text style={[styles.pickerSeparator, { color: theme.text }]}>:</Text>
+              <ScrollPicker
+                items={minutes}
+                selectedIndex={parseInt(wakeMinute)}
+                onValueChange={(index) => {
+                  const newTime = `${wakeHour}:${minutes[index]}`;
+                  setWakeTime(newTime);
+                }}
+                textColor={theme.textSecondary}
+                primaryColor={theme.primary}
+              />
+            </View>
+          </View>
+        </SafeAreaView>
+      </Modal>
 
-      {showSleepPicker && (
-        <DateTimePicker
-          value={parseTime(sleepTime)}
-          mode="time"
-          is24Hour={true}
-          display="spinner"
-          onChange={(event, date) => {
-            setShowSleepPicker(Platform.OS === 'ios');
-            if (date) {
-              const timeStr = `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
-              console.log('HomeScreen: Sleep time changed to', timeStr);
-              setSleepTime(timeStr);
-            }
-          }}
-        />
-      )}
+      <Modal
+        visible={showSleepPicker}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowSleepPicker(false)}
+        transparent={false}
+      >
+        <SafeAreaView style={[styles.pickerModal, { backgroundColor: theme.background }]}>
+          <View style={styles.pickerHeader}>
+            <TouchableOpacity onPress={() => setShowSleepPicker(false)}>
+              <Text style={[styles.pickerCancel, { color: theme.text }]}>Abbrechen</Text>
+            </TouchableOpacity>
+            <Text style={[styles.pickerTitle, { color: theme.text }]}>Schlafenszeit</Text>
+            <TouchableOpacity
+              onPress={() => {
+                console.log('HomeScreen: Sleep time set to', sleepTime);
+                setShowSleepPicker(false);
+              }}
+            >
+              <Text style={[styles.pickerDone, { color: theme.primary }]}>Fertig</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={styles.pickerContainer}>
+            <View style={styles.pickerRow}>
+              <ScrollPicker
+                items={hours}
+                selectedIndex={parseInt(sleepHour)}
+                onValueChange={(index) => {
+                  const newTime = `${hours[index]}:${sleepMinute}`;
+                  setSleepTime(newTime);
+                }}
+                textColor={theme.textSecondary}
+                primaryColor={theme.primary}
+              />
+              <Text style={[styles.pickerSeparator, { color: theme.text }]}>:</Text>
+              <ScrollPicker
+                items={minutes}
+                selectedIndex={parseInt(sleepMinute)}
+                onValueChange={(index) => {
+                  const newTime = `${sleepHour}:${minutes[index]}`;
+                  setSleepTime(newTime);
+                }}
+                textColor={theme.textSecondary}
+                primaryColor={theme.primary}
+              />
+            </View>
+          </View>
+        </SafeAreaView>
+      </Modal>
+
+      <Modal
+        visible={showCigarettePicker}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowCigarettePicker(false)}
+        transparent={false}
+      >
+        <SafeAreaView style={[styles.pickerModal, { backgroundColor: theme.background }]}>
+          <View style={styles.pickerHeader}>
+            <TouchableOpacity onPress={() => setShowCigarettePicker(false)}>
+              <Text style={[styles.pickerCancel, { color: theme.text }]}>Abbrechen</Text>
+            </TouchableOpacity>
+            <Text style={[styles.pickerTitle, { color: theme.text }]}>Zigaretten</Text>
+            <TouchableOpacity
+              onPress={() => {
+                console.log('HomeScreen: Cigarettes set to', targetCigarettes);
+                setShowCigarettePicker(false);
+              }}
+            >
+              <Text style={[styles.pickerDone, { color: theme.primary }]}>Fertig</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={styles.pickerContainer}>
+            <ScrollPicker
+              items={cigarettes}
+              selectedIndex={targetCigarettes - 1}
+              onValueChange={(index) => {
+                setTargetCigarettes(index + 1);
+              }}
+              textColor={theme.textSecondary}
+              primaryColor={theme.primary}
+            />
+          </View>
+        </SafeAreaView>
+      </Modal>
     </View>
   );
 }
@@ -736,28 +833,15 @@ const styles = StyleSheet.create({
   cigaretteInput: {
     alignItems: 'center',
   },
-  cigaretteLabel: {
-    fontSize: 14,
-    fontWeight: '500',
-    marginBottom: 16,
-  },
-  cigaretteControls: {
-    flexDirection: 'row',
+  cigarettePicker: {
+    borderRadius: 12,
+    padding: 16,
     alignItems: 'center',
-    gap: 24,
-  },
-  cigaretteButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
+    minWidth: 120,
   },
   cigaretteNumber: {
     fontSize: 48,
     fontWeight: '900',
-    minWidth: 80,
-    textAlign: 'center',
   },
   setupButton: {
     borderRadius: 16,
@@ -815,5 +899,43 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  pickerModal: {
+    flex: 1,
+  },
+  pickerHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0, 0, 0, 0.1)',
+  },
+  pickerCancel: {
+    fontSize: 17,
+    fontWeight: '400',
+  },
+  pickerTitle: {
+    fontSize: 17,
+    fontWeight: '600',
+  },
+  pickerDone: {
+    fontSize: 17,
+    fontWeight: '600',
+  },
+  pickerContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  pickerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 20,
+  },
+  pickerSeparator: {
+    fontSize: 32,
+    fontWeight: '700',
   },
 });
