@@ -21,7 +21,6 @@ export function IconSymbol({
   testID,
   accessibilityLabel,
 }: {
-  ios_icon_name?: string | undefined;
   android_material_icon_name: keyof typeof MaterialIcons.glyphMap;
   size?: number;
   color: string | OpaqueColorValue;

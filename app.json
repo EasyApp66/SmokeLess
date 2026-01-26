@@ -1,8 +1,7 @@
-
 {
   "expo": {
     "name": "SmokeLess",
-    "slug": "smokeless",
+    "slug": "SmokeLess",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/natively-dark.png",
@@ -47,5 +46,6 @@
       "router": {},
       "backendUrl": "https://g5y8wrbctkd3t5cqsjp4vhbv9eg4w5y6.app.specular.dev"
     }
-  }
+  },
+  "scheme": "SmokeLess"
 }

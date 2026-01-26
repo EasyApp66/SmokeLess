@@ -16,7 +16,6 @@ export function IconSymbol({
   accessibilityLabel,
 }: {
   ios_icon_name: SymbolViewProps["name"];
-  android_material_icon_name?: any;
   size?: number;
   color: string;
   style?: StyleProp<ViewStyle>;
