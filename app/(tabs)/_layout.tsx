@@ -10,19 +10,22 @@ export default function TabLayout() {
     {
       name: '(home)',
       route: '/(tabs)/(home)/',
-      icon: 'home',
+      iosIcon: 'house.fill',
+      androidIcon: 'home',
       label: 'Home',
     },
     {
       name: 'profile',
       route: '/(tabs)/profile',
-      icon: 'insert-chart',
+      iosIcon: 'chart.bar.fill',
+      androidIcon: 'insert-chart',
       label: 'Statistik',
     },
     {
       name: 'settings',
       route: '/(tabs)/settings',
-      icon: 'settings',
+      iosIcon: 'gearshape.fill',
+      androidIcon: 'settings',
       label: 'Einstellungen',
     },
   ];
