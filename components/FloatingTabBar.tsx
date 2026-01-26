@@ -12,6 +12,7 @@ import { IconSymbol } from '@/components/IconSymbol';
 import { BlurView } from 'expo-blur';
 import Animated, {
   useAnimatedStyle,
+  useSharedValue,
   withSpring,
 } from 'react-native-reanimated';
 import { Href } from 'expo-router';
@@ -110,7 +111,7 @@ interface AnimatedTabButtonProps {
 }
 
 function AnimatedTabButton({ isActive, isDark, tab, onPress }: AnimatedTabButtonProps) {
-  const scale = React.useRef(new Animated.Value(1)).current;
+  const scale = useSharedValue(1);
 
   const animatedStyle = useAnimatedStyle(() => {
     return {
