@@ -128,9 +128,7 @@ function AnimatedTabButton({ isActive, isDark, tab, onPress }: AnimatedTabButton
   };
 
   const activeBackgroundColor = 'rgba(52, 199, 89, 1)';
-
   const inactiveBackgroundColor = 'transparent';
-
   const activeIconColor = '#FFFFFF';
   const inactiveIconColor = isDark ? 'rgba(152, 152, 157, 1)' : 'rgba(142, 142, 147, 1)';
 
@@ -151,7 +149,7 @@ function AnimatedTabButton({ isActive, isDark, tab, onPress }: AnimatedTabButton
         <IconSymbol
           ios_icon_name={tab.iosIcon}
           android_material_icon_name={tab.androidIcon}
-          size={24}
+          size={26}
           color={isActive ? activeIconColor : inactiveIconColor}
         />
       </TouchableOpacity>
@@ -162,7 +160,7 @@ function AnimatedTabButton({ isActive, isDark, tab, onPress }: AnimatedTabButton
 const styles = StyleSheet.create({
   container: {
     position: 'absolute',
-    bottom: 24,
+    bottom: 32,
     left: 0,
     right: 0,
     alignItems: 'center',
@@ -175,8 +173,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: 9999,
-    paddingHorizontal: 6,
-    paddingVertical: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 8,
     borderWidth: 1,
     ...Platform.select({
       web: {
@@ -194,11 +192,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
+    gap: 8,
   },
   tabButton: {
-    width: 52,
-    height: 52,
+    width: 60,
+    height: 60,
     borderRadius: 9999,
     alignItems: 'center',
     justifyContent: 'center',

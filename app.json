@@ -38,7 +38,7 @@
       "expo-web-browser",
       "expo-apple-authentication"
     ],
-    "scheme": "smokeless",
+    "scheme": "SmokeLess",
     "experiments": {
       "typedRoutes": true
     },

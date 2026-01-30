@@ -23,12 +23,17 @@ export default function SettingsScreen() {
   console.log('SettingsScreen: Rendering settings screen');
   const systemColorScheme = useColorScheme();
   const [manualDarkMode, setManualDarkMode] = useState<boolean | null>(null);
+  const [backgroundColor, setBackgroundColor] = useState<'white' | 'black' | 'gray'>('gray');
   
   useEffect(() => {
     const loadDarkModeSetting = async () => {
       const saved = await AsyncStorage.getItem('app-dark-mode');
       if (saved !== null) {
         setManualDarkMode(saved === 'true');
+      }
+      const savedBg = await AsyncStorage.getItem('app-background-color');
+      if (savedBg) {
+        setBackgroundColor(savedBg as 'white' | 'black' | 'gray');
       }
     };
     loadDarkModeSetting();
@@ -86,6 +91,19 @@ export default function SettingsScreen() {
       }, 100);
     } catch (error) {
       console.error('SettingsScreen: Error saving dark mode:', error);
+    }
+  };
+
+  const handleBackgroundColorChange = async (color: 'white' | 'black' | 'gray') => {
+    console.log('SettingsScreen: Changing background color to', color);
+    setBackgroundColor(color);
+    try {
+      await AsyncStorage.setItem('app-background-color', color);
+      setTimeout(() => {
+        router.replace('/(tabs)/settings');
+      }, 100);
+    } catch (error) {
+      console.error('SettingsScreen: Error saving background color:', error);
     }
   };
 
@@ -172,6 +190,10 @@ export default function SettingsScreen() {
       setupDayDesc: 'Zeiten und Ziel für alle Tage festlegen',
       display: 'Darstellung',
       darkMode: 'Dunkelmodus',
+      backgroundColor: 'Hintergrundfarbe',
+      bgWhite: 'Weiß',
+      bgBlack: 'Schwarz',
+      bgGray: 'Grau',
       language: 'Sprache',
       german: 'Deutsch',
       active: 'Aktiv',
@@ -192,6 +214,10 @@ export default function SettingsScreen() {
       setupDayDesc: 'Set times and goal for all days',
       display: 'Display',
       darkMode: 'Dark Mode',
+      backgroundColor: 'Background Color',
+      bgWhite: 'White',
+      bgBlack: 'Black',
+      bgGray: 'Gray',
       language: 'Language',
       german: 'German',
       active: 'Active',
@@ -208,8 +234,20 @@ export default function SettingsScreen() {
 
   const t = texts[language];
 
+  const getBackgroundStyle = () => {
+    switch (backgroundColor) {
+      case 'white':
+        return { backgroundColor: '#FFFFFF' };
+      case 'black':
+        return { backgroundColor: '#000000' };
+      case 'gray':
+      default:
+        return { backgroundColor: theme.background };
+    }
+  };
+
   return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
+    <View style={[styles.container, getBackgroundStyle()]}>
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         <View style={styles.header}>
           <Text style={[styles.headerTitle, { color: theme.text }]}>
@@ -310,6 +348,41 @@ export default function SettingsScreen() {
                   trackColor={{ false: theme.border, true: theme.primary }}
                   thumbColor="#FFFFFF"
                 />
+              </View>
+            </View>
+
+            <View style={[styles.card, { backgroundColor: theme.card, marginTop: 12 }]}>
+              <Text style={[styles.settingLabel, { color: theme.text, marginBottom: 12 }]}>
+                {t.backgroundColor}
+              </Text>
+              <View style={styles.colorOptions}>
+                <TouchableOpacity
+                  style={[
+                    styles.colorOption,
+                    { backgroundColor: '#FFFFFF', borderWidth: 2, borderColor: backgroundColor === 'white' ? theme.primary : theme.border }
+                  ]}
+                  onPress={() => handleBackgroundColorChange('white')}
+                >
+                  <Text style={[styles.colorLabel, { color: '#000000' }]}>{t.bgWhite}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.colorOption,
+                    { backgroundColor: '#000000', borderWidth: 2, borderColor: backgroundColor === 'black' ? theme.primary : theme.border }
+                  ]}
+                  onPress={() => handleBackgroundColorChange('black')}
+                >
+                  <Text style={[styles.colorLabel, { color: '#FFFFFF' }]}>{t.bgBlack}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.colorOption,
+                    { backgroundColor: theme.background, borderWidth: 2, borderColor: backgroundColor === 'gray' ? theme.primary : theme.border }
+                  ]}
+                  onPress={() => handleBackgroundColorChange('gray')}
+                >
+                  <Text style={[styles.colorLabel, { color: theme.text }]}>{t.bgGray}</Text>
+                </TouchableOpacity>
               </View>
             </View>
           </Animated.View>
@@ -592,6 +665,21 @@ const styles = StyleSheet.create({
   },
   settingLabel: {
     fontSize: 16,
+    fontWeight: '600',
+  },
+  colorOptions: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  colorOption: {
+    flex: 1,
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  colorLabel: {
+    fontSize: 14,
     fontWeight: '600',
   },
   languageRow: {
