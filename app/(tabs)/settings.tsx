@@ -18,7 +18,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { useAuth } from '@/contexts/AuthContext';
-import { usePlacement, useUser } from 'expo-superwall';
 
 export default function SettingsScreen() {
   console.log('SettingsScreen: Rendering settings screen');
@@ -44,55 +43,6 @@ export default function SettingsScreen() {
   const theme = isDark ? colors.dark : colors.light;
   const router = useRouter();
   const { signOut, user } = useAuth();
-  
-  // Superwall hooks for payment integration
-  const { identify, subscriptionStatus } = useUser();
-  
-  // Lifetime Access Paywall
-  const { registerPlacement: registerLifetimePlacement } = usePlacement({
-    onPresent: (info) => {
-      console.log('💳 SettingsScreen: Lifetime access paywall presented:', info);
-    },
-    onDismiss: (info, result) => {
-      console.log('💳 SettingsScreen: Lifetime access paywall dismissed with result:', result);
-      if (result === 'purchased') {
-        console.log('✅ SettingsScreen: User purchased lifetime access!');
-        Alert.alert('Erfolg!', 'Lebenslanger Zugang freigeschaltet!');
-      } else if (result === 'declined') {
-        console.log('❌ SettingsScreen: User declined lifetime access purchase');
-      } else if (result === 'restored') {
-        console.log('🔄 SettingsScreen: User restored lifetime access purchase');
-        Alert.alert('Wiederhergestellt!', 'Ihr Kauf wurde wiederhergestellt!');
-      }
-    },
-    onError: (error) => {
-      console.error('❌ SettingsScreen: Lifetime paywall error:', error);
-      Alert.alert('Fehler', 'Es gab ein Problem beim Laden der Zahlungsseite. Bitte versuchen Sie es später erneut.');
-    },
-  });
-
-  // Monthly Subscription Paywall
-  const { registerPlacement: registerSubscriptionPlacement } = usePlacement({
-    onPresent: (info) => {
-      console.log('💳 SettingsScreen: Subscription paywall presented:', info);
-    },
-    onDismiss: (info, result) => {
-      console.log('💳 SettingsScreen: Subscription paywall dismissed with result:', result);
-      if (result === 'purchased') {
-        console.log('✅ SettingsScreen: User subscribed!');
-        Alert.alert('Erfolg!', 'Abonnement aktiviert!');
-      } else if (result === 'declined') {
-        console.log('❌ SettingsScreen: User declined subscription');
-      } else if (result === 'restored') {
-        console.log('🔄 SettingsScreen: User restored subscription');
-        Alert.alert('Wiederhergestellt!', 'Ihr Abonnement wurde wiederhergestellt!');
-      }
-    },
-    onError: (error) => {
-      console.error('❌ SettingsScreen: Subscription paywall error:', error);
-      Alert.alert('Fehler', 'Es gab ein Problem beim Laden der Zahlungsseite. Bitte versuchen Sie es später erneut.');
-    },
-  });
 
   const [language, setLanguage] = useState<'de' | 'en'>('de');
   const [showLegalModal, setShowLegalModal] = useState(false);
@@ -102,17 +52,6 @@ export default function SettingsScreen() {
   useEffect(() => {
     loadAllSettings();
   }, []);
-
-  useEffect(() => {
-    // Identify user with Superwall when user is available
-    // This connects the Better Auth user with Superwall for payment tracking
-    if (user?.id) {
-      console.log('💳 SettingsScreen: Identifying user with Superwall for payment tracking:', user.id);
-      identify(user.id).catch((error) => {
-        console.error('❌ SettingsScreen: Error identifying user with Superwall:', error);
-      });
-    }
-  }, [user, identify]);
 
   const loadAllSettings = async () => {
     try {
@@ -196,38 +135,6 @@ export default function SettingsScreen() {
     setShowLegalModal(true);
   };
 
-  const handleLifetimeAccess = async () => {
-    console.log('💳 SettingsScreen: User tapped lifetime access - triggering Superwall paywall');
-    try {
-      await registerLifetimePlacement({
-        placement: 'lifetime_access',
-        feature: () => {
-          console.log('✅ SettingsScreen: User already has lifetime access');
-          Alert.alert('Bereits freigeschaltet!', 'Sie haben bereits lebenslangen Zugang!');
-        },
-      });
-    } catch (error) {
-      console.error('❌ SettingsScreen: Error showing lifetime paywall:', error);
-      Alert.alert('Fehler', 'Es gab ein Problem beim Laden der Zahlungsseite. Bitte versuchen Sie es später erneut.');
-    }
-  };
-
-  const handleSubscribe = async () => {
-    console.log('💳 SettingsScreen: User tapped subscribe - triggering Superwall paywall');
-    try {
-      await registerSubscriptionPlacement({
-        placement: 'monthly_subscription',
-        feature: () => {
-          console.log('✅ SettingsScreen: User already has active subscription');
-          Alert.alert('Bereits abonniert!', 'Sie haben bereits ein aktives Abonnement!');
-        },
-      });
-    } catch (error) {
-      console.error('❌ SettingsScreen: Error showing subscription paywall:', error);
-      Alert.alert('Fehler', 'Es gab ein Problem beim Laden der Zahlungsseite. Bitte versuchen Sie es später erneut.');
-    }
-  };
-
   const texts = {
     de: {
       title: 'Einstellungen',
@@ -243,12 +150,6 @@ export default function SettingsScreen() {
       language: 'Sprache',
       german: 'Deutsch',
       active: 'Aktiv',
-      unlock: 'Mehr freischalten',
-      lifetimeAccess: 'Lebenslanger Zugang',
-      lifetimePrice: 'Einmaliger Kauf • 20 CHF',
-      subscribe: 'Abonnieren',
-      subscribePrice: '1 CHF / Monat • Eigene Themes, Statistiken & mehr',
-      subscriptionActive: 'Abonnement aktiv',
       signOut: 'Abmelden',
       legal: 'Rechtliches',
       deleteData: 'Alle Daten löschen',
@@ -271,12 +172,6 @@ export default function SettingsScreen() {
       language: 'Language',
       german: 'German',
       active: 'Active',
-      unlock: 'Unlock More',
-      lifetimeAccess: 'Lifetime Access',
-      lifetimePrice: 'One-time purchase • 20 CHF',
-      subscribe: 'Subscribe',
-      subscribePrice: '1 CHF / Month • Custom themes, statistics & more',
-      subscriptionActive: 'Subscription active',
       signOut: 'Sign Out',
       legal: 'Legal',
       deleteData: 'Delete All Data',
@@ -288,7 +183,6 @@ export default function SettingsScreen() {
   };
 
   const t = texts[language];
-  const isSubscribed = subscriptionStatus?.status === 'ACTIVE';
 
   const getBackgroundStyle = () => {
     switch (backgroundColor) {
@@ -333,13 +227,6 @@ export default function SettingsScreen() {
                     <Text style={[styles.userEmail, { color: theme.textSecondary }]}>
                       {user.email || 'Signed in with Apple'}
                     </Text>
-                    {isSubscribed && (
-                      <View style={[styles.subscriptionBadge, { backgroundColor: theme.primary }]}>
-                        <Text style={styles.subscriptionBadgeText}>
-                          {t.subscriptionActive}
-                        </Text>
-                      </View>
-                    )}
                   </View>
                 </View>
               </View>
@@ -462,33 +349,6 @@ export default function SettingsScreen() {
           </Animated.View>
 
           <Animated.View entering={FadeInDown.delay(300).duration(400)} style={styles.section}>
-            <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>
-              {t.unlock}
-            </Text>
-            <TouchableOpacity
-              style={[styles.premiumCard, { backgroundColor: theme.primary }]}
-              onPress={handleLifetimeAccess}
-            >
-              <Text style={styles.premiumTitle}>
-                {t.lifetimeAccess}
-              </Text>
-              <Text style={styles.premiumPrice}>
-                {t.lifetimePrice}
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.card, { backgroundColor: theme.card }]}
-              onPress={handleSubscribe}
-            >
-              <Text style={[styles.subscribeTitle, { color: theme.text }]}>
-                {t.subscribe}
-              </Text>
-              <Text style={[styles.subscribePrice, { color: theme.textSecondary }]}>
-                {t.subscribePrice}
-              </Text>
-            </TouchableOpacity>
-
             <TouchableOpacity
               style={styles.signOutButton}
               onPress={handleLogout}
@@ -746,31 +606,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
   },
-  premiumCard: {
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 12,
-  },
-  premiumTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#FFFFFF',
-    marginBottom: 4,
-  },
-  premiumPrice: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: 'rgba(255, 255, 255, 0.9)',
-  },
-  subscribeTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    marginBottom: 4,
-  },
-  subscribePrice: {
-    fontSize: 13,
-    fontWeight: '500',
-  },
   signOutButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -899,16 +734,5 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
     marginBottom: 8,
-  },
-  subscriptionBadge: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  subscriptionBadgeText: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#FFFFFF',
   },
 });
