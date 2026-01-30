@@ -49,7 +49,7 @@ export default function SettingsScreen() {
   const [backgroundColor, setBackgroundColor] = useState<'white' | 'black' | 'gray'>('gray');
   
   useEffect(() => {
-    const loadDarkModeSetting = async () => {
+    const loadSettings = async () => {
       const saved = await AsyncStorage.getItem('app-dark-mode');
       if (saved !== null) {
         setManualDarkMode(saved === 'true');
@@ -59,7 +59,7 @@ export default function SettingsScreen() {
         setBackgroundColor(savedBg as 'white' | 'black' | 'gray');
       }
     };
-    loadDarkModeSetting();
+    loadSettings();
   }, []);
 
   const isDark = manualDarkMode !== null ? manualDarkMode : systemColorScheme === 'dark';
@@ -67,10 +67,8 @@ export default function SettingsScreen() {
   const router = useRouter();
 
   const [language, setLanguage] = useState<'de' | 'en'>('de');
-  const [darkModeEnabled, setDarkModeEnabled] = useState(isDark);
   const [showLegalModal, setShowLegalModal] = useState(false);
   const [applyToAllDays, setApplyToAllDays] = useState(false);
-  const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   
   const [scheduleWakeTime, setScheduleWakeTime] = useState('06:00');
@@ -85,13 +83,12 @@ export default function SettingsScreen() {
   const cigarettes = generateCigarettes();
 
   useEffect(() => {
-    loadSettings();
+    loadAllSettings();
   }, []);
 
-  const loadSettings = async () => {
+  const loadAllSettings = async () => {
     try {
       const savedLanguage = await AsyncStorage.getItem('app-language');
-      const savedDarkMode = await AsyncStorage.getItem('app-dark-mode');
       const savedApplyToAll = await AsyncStorage.getItem('apply-to-all-days');
       const savedWakeTime = await AsyncStorage.getItem('schedule-wake-time');
       const savedSleepTime = await AsyncStorage.getItem('schedule-sleep-time');
@@ -99,9 +96,6 @@ export default function SettingsScreen() {
       
       if (savedLanguage) {
         setLanguage(savedLanguage as 'de' | 'en');
-      }
-      if (savedDarkMode !== null) {
-        setDarkModeEnabled(savedDarkMode === 'true');
       }
       if (savedApplyToAll !== null) {
         setApplyToAllDays(savedApplyToAll === 'true');
@@ -128,19 +122,6 @@ export default function SettingsScreen() {
       await AsyncStorage.setItem('app-language', newLanguage);
     } catch (error) {
       console.error('SettingsScreen: Error saving language:', error);
-    }
-  };
-
-  const handleDarkModeToggle = async (value: boolean) => {
-    console.log('SettingsScreen: Toggling dark mode to', value);
-    setDarkModeEnabled(value);
-    try {
-      await AsyncStorage.setItem('app-dark-mode', value.toString());
-      setTimeout(() => {
-        router.replace('/(tabs)/settings');
-      }, 100);
-    } catch (error) {
-      console.error('SettingsScreen: Error saving dark mode:', error);
     }
   };
 
@@ -173,7 +154,6 @@ export default function SettingsScreen() {
       await AsyncStorage.setItem('schedule-wake-time', scheduleWakeTime);
       await AsyncStorage.setItem('schedule-sleep-time', scheduleSleepTime);
       await AsyncStorage.setItem('schedule-cigarettes', scheduleTargetCigarettes.toString());
-      setShowScheduleModal(false);
     } catch (error) {
       console.error('SettingsScreen: Error saving schedule:', error);
     }
@@ -218,10 +198,10 @@ export default function SettingsScreen() {
   const texts = {
     de: {
       title: 'Einstellungen',
+      setupMorning: 'Morgen einrichten',
       schedule: 'Zeitplan für alle Tage',
       scheduleDesc: 'Änderungen auf alle Tage anwenden',
       display: 'Darstellung',
-      darkMode: 'Dunkelmodus',
       backgroundColor: 'Hintergrundfarbe',
       bgWhite: 'Weiß',
       bgBlack: 'Schwarz',
@@ -249,10 +229,10 @@ export default function SettingsScreen() {
     },
     en: {
       title: 'Settings',
+      setupMorning: 'Setup Tomorrow',
       schedule: 'Schedule for all days',
       scheduleDesc: 'Apply changes to all days',
       display: 'Display',
-      darkMode: 'Dark Mode',
       backgroundColor: 'Background Color',
       bgWhite: 'White',
       bgBlack: 'Black',
@@ -313,6 +293,66 @@ export default function SettingsScreen() {
         >
           <Animated.View entering={FadeIn.duration(400)} style={styles.section}>
             <View style={[styles.card, { backgroundColor: theme.card }]}>
+              <View style={styles.setupHeader}>
+                <IconSymbol
+                  ios_icon_name="calendar"
+                  android_material_icon_name="calendar-today"
+                  size={24}
+                  color={theme.primary}
+                />
+                <Text style={[styles.setupTitle, { color: theme.text }]}>
+                  {t.setupMorning}
+                </Text>
+              </View>
+              
+              <View style={styles.setupInputs}>
+                <View style={styles.timeRow}>
+                  <View style={styles.timeInput}>
+                    <Text style={[styles.inputLabel, { color: theme.textSecondary }]}>
+                      {t.wakeTime}
+                    </Text>
+                    <TouchableOpacity
+                      onPress={() => setShowWakePicker(true)}
+                      style={[styles.timePicker, { backgroundColor: theme.background }]}
+                    >
+                      <Text style={[styles.timeText, { color: theme.primary }]}>
+                        {scheduleWakeTime}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+
+                  <View style={styles.timeInput}>
+                    <Text style={[styles.inputLabel, { color: theme.textSecondary }]}>
+                      {t.sleepTime}
+                    </Text>
+                    <TouchableOpacity
+                      onPress={() => setShowSleepPicker(true)}
+                      style={[styles.timePicker, { backgroundColor: theme.background }]}
+                    >
+                      <Text style={[styles.timeText, { color: theme.primary }]}>
+                        {scheduleSleepTime}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+
+                <View style={styles.cigaretteInput}>
+                  <Text style={[styles.inputLabel, { color: theme.textSecondary }]}>
+                    {t.targetCigarettes}
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() => setShowCigarettePicker(true)}
+                    style={[styles.cigarettePicker, { backgroundColor: theme.background }]}
+                  >
+                    <Text style={[styles.cigaretteNumber, { color: theme.primary }]}>
+                      {scheduleTargetCigarettes}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+
+            <View style={[styles.card, { backgroundColor: theme.card, marginTop: 12 }]}>
               <View style={styles.scheduleHeader}>
                 <View style={styles.scheduleTextContainer}>
                   <Text style={[styles.cardTitle, { color: theme.text }]}>
@@ -330,60 +370,14 @@ export default function SettingsScreen() {
                 />
               </View>
             </View>
-
-            {applyToAllDays && (
-              <TouchableOpacity
-                style={[styles.scheduleCard, { backgroundColor: theme.card }]}
-                onPress={() => {
-                  console.log('SettingsScreen: User tapped schedule settings');
-                  setShowScheduleModal(true);
-                }}
-              >
-                <View style={styles.scheduleCardContent}>
-                  <IconSymbol
-                    ios_icon_name="calendar"
-                    android_material_icon_name="calendar-today"
-                    size={24}
-                    color={theme.primary}
-                  />
-                  <View style={styles.scheduleCardText}>
-                    <Text style={[styles.scheduleCardTitle, { color: theme.text }]}>
-                      {t.yourSchedule}
-                    </Text>
-                    <Text style={[styles.scheduleCardSubtitle, { color: theme.textSecondary }]}>
-                      {scheduleWakeTime} - {scheduleSleepTime} • {scheduleTargetCigarettes} Zigaretten
-                    </Text>
-                  </View>
-                  <IconSymbol
-                    ios_icon_name="chevron.right"
-                    android_material_icon_name="chevron-right"
-                    size={20}
-                    color={theme.textSecondary}
-                  />
-                </View>
-              </TouchableOpacity>
-            )}
           </Animated.View>
 
           <Animated.View entering={FadeInDown.delay(100).duration(400)} style={styles.section}>
             <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>
               {t.display}
             </Text>
-            <View style={[styles.card, { backgroundColor: theme.card }]}>
-              <View style={styles.settingRow}>
-                <Text style={[styles.settingLabel, { color: theme.text }]}>
-                  {t.darkMode}
-                </Text>
-                <Switch
-                  value={darkModeEnabled}
-                  onValueChange={handleDarkModeToggle}
-                  trackColor={{ false: theme.border, true: theme.primary }}
-                  thumbColor="#FFFFFF"
-                />
-              </View>
-            </View>
 
-            <View style={[styles.card, { backgroundColor: theme.card, marginTop: 12 }]}>
+            <View style={[styles.card, { backgroundColor: theme.card }]}>
               <Text style={[styles.settingLabel, { color: theme.text, marginBottom: 12 }]}>
                 {t.backgroundColor}
               </Text>
@@ -563,78 +557,6 @@ export default function SettingsScreen() {
       </Modal>
 
       <Modal
-        visible={showScheduleModal}
-        animationType="slide"
-        presentationStyle="pageSheet"
-        onRequestClose={() => setShowScheduleModal(false)}
-      >
-        <SafeAreaView style={[styles.modalContainer, { backgroundColor: theme.background }]}>
-          <View style={[styles.modalHeader, { borderBottomColor: theme.border }]}>
-            <TouchableOpacity onPress={() => setShowScheduleModal(false)}>
-              <Text style={[styles.modalCancel, { color: theme.text }]}>
-                {t.cancel}
-              </Text>
-            </TouchableOpacity>
-            <Text style={[styles.modalTitle, { color: theme.text }]}>
-              {t.yourSchedule}
-            </Text>
-            <TouchableOpacity onPress={handleSaveSchedule}>
-              <Text style={[styles.modalSave, { color: theme.primary }]}>
-                {t.save}
-              </Text>
-            </TouchableOpacity>
-          </View>
-          <ScrollView style={styles.modalContent} contentContainerStyle={styles.modalContentContainer}>
-            <View style={styles.scheduleInputs}>
-              <View style={styles.timeRow}>
-                <View style={styles.timeInput}>
-                  <Text style={[styles.inputLabel, { color: theme.textSecondary }]}>
-                    {t.wakeTime}
-                  </Text>
-                  <TouchableOpacity
-                    onPress={() => setShowWakePicker(true)}
-                    style={[styles.timePicker, { backgroundColor: theme.card }]}
-                  >
-                    <Text style={[styles.timeText, { color: theme.primary }]}>
-                      {scheduleWakeTime}
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-
-                <View style={styles.timeInput}>
-                  <Text style={[styles.inputLabel, { color: theme.textSecondary }]}>
-                    {t.sleepTime}
-                  </Text>
-                  <TouchableOpacity
-                    onPress={() => setShowSleepPicker(true)}
-                    style={[styles.timePicker, { backgroundColor: theme.card }]}
-                  >
-                    <Text style={[styles.timeText, { color: theme.primary }]}>
-                      {scheduleSleepTime}
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-
-              <View style={styles.cigaretteInput}>
-                <Text style={[styles.inputLabel, { color: theme.textSecondary }]}>
-                  {t.targetCigarettes}
-                </Text>
-                <TouchableOpacity
-                  onPress={() => setShowCigarettePicker(true)}
-                  style={[styles.cigarettePicker, { backgroundColor: theme.card }]}
-                >
-                  <Text style={[styles.cigaretteNumber, { color: theme.primary }]}>
-                    {scheduleTargetCigarettes}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </ScrollView>
-        </SafeAreaView>
-      </Modal>
-
-      <Modal
         visible={showWakePicker}
         animationType="slide"
         presentationStyle="pageSheet"
@@ -647,7 +569,10 @@ export default function SettingsScreen() {
               <Text style={[styles.pickerCancel, { color: theme.text }]}>Abbrechen</Text>
             </TouchableOpacity>
             <Text style={[styles.pickerTitle, { color: theme.text }]}>Aufstehzeit</Text>
-            <TouchableOpacity onPress={() => setShowWakePicker(false)}>
+            <TouchableOpacity onPress={() => {
+              handleSaveSchedule();
+              setShowWakePicker(false);
+            }}>
               <Text style={[styles.pickerDone, { color: theme.primary }]}>Fertig</Text>
             </TouchableOpacity>
           </View>
@@ -692,7 +617,10 @@ export default function SettingsScreen() {
               <Text style={[styles.pickerCancel, { color: theme.text }]}>Abbrechen</Text>
             </TouchableOpacity>
             <Text style={[styles.pickerTitle, { color: theme.text }]}>Schlafenszeit</Text>
-            <TouchableOpacity onPress={() => setShowSleepPicker(false)}>
+            <TouchableOpacity onPress={() => {
+              handleSaveSchedule();
+              setShowSleepPicker(false);
+            }}>
               <Text style={[styles.pickerDone, { color: theme.primary }]}>Fertig</Text>
             </TouchableOpacity>
           </View>
@@ -737,7 +665,10 @@ export default function SettingsScreen() {
               <Text style={[styles.pickerCancel, { color: theme.text }]}>Abbrechen</Text>
             </TouchableOpacity>
             <Text style={[styles.pickerTitle, { color: theme.text }]}>Zigaretten</Text>
-            <TouchableOpacity onPress={() => setShowCigarettePicker(false)}>
+            <TouchableOpacity onPress={() => {
+              handleSaveSchedule();
+              setShowCigarettePicker(false);
+            }}>
               <Text style={[styles.pickerDone, { color: theme.primary }]}>Fertig</Text>
             </TouchableOpacity>
           </View>
@@ -853,6 +784,54 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 16,
   },
+  setupHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 20,
+  },
+  setupTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  setupInputs: {
+    gap: 16,
+  },
+  timeRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  timeInput: {
+    flex: 1,
+  },
+  inputLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+    marginBottom: 8,
+  },
+  timePicker: {
+    borderRadius: 12,
+    padding: 12,
+    alignItems: 'center',
+  },
+  timeText: {
+    fontSize: 20,
+    fontWeight: '700',
+  },
+  cigaretteInput: {
+    alignItems: 'center',
+  },
+  cigarettePicker: {
+    borderRadius: 12,
+    padding: 12,
+    alignItems: 'center',
+    minWidth: 100,
+  },
+  cigaretteNumber: {
+    fontSize: 36,
+    fontWeight: '900',
+  },
   scheduleHeader: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -869,32 +848,6 @@ const styles = StyleSheet.create({
   },
   cardDescription: {
     fontSize: 14,
-  },
-  scheduleCard: {
-    borderRadius: 16,
-    padding: 16,
-    marginTop: 12,
-  },
-  scheduleCardContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  scheduleCardText: {
-    flex: 1,
-  },
-  scheduleCardTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 2,
-  },
-  scheduleCardSubtitle: {
-    fontSize: 13,
-  },
-  settingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
   },
   settingLabel: {
     fontSize: 16,
@@ -1040,14 +993,6 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '700',
   },
-  modalCancel: {
-    fontSize: 17,
-    fontWeight: '400',
-  },
-  modalSave: {
-    fontSize: 17,
-    fontWeight: '600',
-  },
   closeButton: {
     width: 32,
     height: 32,
@@ -1072,44 +1017,6 @@ const styles = StyleSheet.create({
   legalSectionText: {
     fontSize: 14,
     lineHeight: 22,
-  },
-  scheduleInputs: {
-    gap: 20,
-  },
-  timeRow: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  timeInput: {
-    flex: 1,
-  },
-  inputLabel: {
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 0.5,
-    marginBottom: 8,
-  },
-  timePicker: {
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-  },
-  timeText: {
-    fontSize: 24,
-    fontWeight: '700',
-  },
-  cigaretteInput: {
-    alignItems: 'center',
-  },
-  cigarettePicker: {
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-    minWidth: 120,
-  },
-  cigaretteNumber: {
-    fontSize: 48,
-    fontWeight: '900',
   },
   pickerModal: {
     flex: 1,

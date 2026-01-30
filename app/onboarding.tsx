@@ -5,8 +5,7 @@ import {
   Text,
   StyleSheet,
   useColorScheme,
-  Modal,
-  ScrollView,
+  TouchableOpacity,
   Platform,
 } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
@@ -69,22 +68,7 @@ export default function OnboardingScreen() {
       -1,
       false
     );
-
-    // Auto-complete onboarding and navigate to home after 2 seconds
-    const timer = setTimeout(async () => {
-      console.log('OnboardingScreen: Auto-completing onboarding');
-      try {
-        await AsyncStorage.setItem('smoke-onboarding-completed', 'true');
-        console.log('OnboardingScreen: Onboarding completed, navigating to home');
-        router.replace('/(tabs)/(home)');
-      } catch (error) {
-        console.error('OnboardingScreen: Error during auto-onboarding:', error);
-        router.replace('/(tabs)/(home)');
-      }
-    }, 2000);
-
-    return () => clearTimeout(timer);
-  }, [orb1Scale, orb1Opacity, orb2Scale, orb2Opacity, router]);
+  }, [orb1Scale, orb1Opacity, orb2Scale, orb2Opacity]);
 
   const orb1Style = useAnimatedStyle(() => {
     return {
@@ -99,6 +83,18 @@ export default function OnboardingScreen() {
       opacity: orb2Opacity.value,
     };
   });
+
+  const handleGoPress = async () => {
+    console.log('OnboardingScreen: User tapped GO button');
+    try {
+      await AsyncStorage.setItem('smoke-onboarding-completed', 'true');
+      console.log('OnboardingScreen: Onboarding completed, navigating to home');
+      router.replace('/(tabs)/(home)');
+    } catch (error) {
+      console.error('OnboardingScreen: Error during onboarding:', error);
+      router.replace('/(tabs)/(home)');
+    }
+  };
 
   const titleLine1 = 'BE SMART';
   const titleLine2 = 'SMOKE LESS';
@@ -132,6 +128,14 @@ export default function OnboardingScreen() {
             </View>
 
             <View style={styles.buttonContainer}>
+              <TouchableOpacity
+                onPress={handleGoPress}
+                style={styles.goButton}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.goButtonText}>GO</Text>
+              </TouchableOpacity>
+
               <Text style={[
                 styles.legalText,
                 Platform.OS === 'ios' && { fontSize: 10, lineHeight: 14 }
@@ -209,6 +213,23 @@ const styles = StyleSheet.create({
     width: '100%',
     alignItems: 'center',
     gap: 20,
+  },
+  goButton: {
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 60,
+    paddingVertical: 18,
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  goButtonText: {
+    fontSize: 24,
+    fontWeight: '900',
+    color: 'rgb(15, 105, 65)',
+    letterSpacing: 1,
   },
   legalText: {
     fontSize: 14,

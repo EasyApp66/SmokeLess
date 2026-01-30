@@ -8,7 +8,6 @@ import {
   TouchableOpacity,
   useColorScheme,
   Switch,
-  Alert,
   Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -26,7 +25,7 @@ export default function SettingsScreen() {
   const [backgroundColor, setBackgroundColor] = useState<'white' | 'black' | 'gray'>('gray');
   
   useEffect(() => {
-    const loadDarkModeSetting = async () => {
+    const loadSettings = async () => {
       const saved = await AsyncStorage.getItem('app-dark-mode');
       if (saved !== null) {
         setManualDarkMode(saved === 'true');
@@ -36,7 +35,7 @@ export default function SettingsScreen() {
         setBackgroundColor(savedBg as 'white' | 'black' | 'gray');
       }
     };
-    loadDarkModeSetting();
+    loadSettings();
   }, []);
 
   const isDark = manualDarkMode !== null ? manualDarkMode : systemColorScheme === 'dark';
@@ -45,25 +44,20 @@ export default function SettingsScreen() {
   const { signOut, user } = useAuth();
 
   const [language, setLanguage] = useState<'de' | 'en'>('de');
-  const [darkModeEnabled, setDarkModeEnabled] = useState(isDark);
   const [showLegalModal, setShowLegalModal] = useState(false);
   const [applyToAllDays, setApplyToAllDays] = useState(false);
-  const [showSetupModal, setShowSetupModal] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   useEffect(() => {
-    loadSettings();
+    loadAllSettings();
   }, []);
 
-  const loadSettings = async () => {
+  const loadAllSettings = async () => {
     try {
       const savedLanguage = await AsyncStorage.getItem('app-language');
-      const savedDarkMode = await AsyncStorage.getItem('app-dark-mode');
       
       if (savedLanguage) {
         setLanguage(savedLanguage as 'de' | 'en');
-      }
-      if (savedDarkMode !== null) {
-        setDarkModeEnabled(savedDarkMode === 'true');
       }
     } catch (error) {
       console.error('SettingsScreen: Error loading settings:', error);
@@ -78,19 +72,6 @@ export default function SettingsScreen() {
       await AsyncStorage.setItem('app-language', newLanguage);
     } catch (error) {
       console.error('SettingsScreen: Error saving language:', error);
-    }
-  };
-
-  const handleDarkModeToggle = async (value: boolean) => {
-    console.log('SettingsScreen: Toggling dark mode to', value);
-    setDarkModeEnabled(value);
-    try {
-      await AsyncStorage.setItem('app-dark-mode', value.toString());
-      setTimeout(() => {
-        router.replace('/(tabs)/settings');
-      }, 100);
-    } catch (error) {
-      console.error('SettingsScreen: Error saving dark mode:', error);
     }
   };
 
@@ -109,71 +90,43 @@ export default function SettingsScreen() {
 
   const handleDeleteData = () => {
     console.log('SettingsScreen: User tapped delete data');
-    Alert.alert(
-      language === 'de' ? 'Alle Daten löschen' : 'Delete All Data',
-      language === 'de' 
-        ? 'Möchten Sie wirklich alle Ihre Daten löschen? Diese Aktion kann nicht rückgängig gemacht werden.'
-        : 'Are you sure you want to delete all your data? This action cannot be undone.',
-      [
-        {
-          text: language === 'de' ? 'Abbrechen' : 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: language === 'de' ? 'Löschen' : 'Delete',
-          style: 'destructive',
-          onPress: async () => {
-            console.log('SettingsScreen: Deleting all data');
-            try {
-              await AsyncStorage.clear();
-              console.log('SettingsScreen: Data deleted, redirecting to welcome');
-              router.replace('/onboarding');
-            } catch (error) {
-              console.error('SettingsScreen: Error deleting data:', error);
-            }
-          },
-        },
-      ]
-    );
+    setShowLogoutModal(true);
+  };
+
+  const confirmDelete = async () => {
+    console.log('SettingsScreen: Confirming delete');
+    try {
+      await AsyncStorage.clear();
+      console.log('SettingsScreen: Data deleted, redirecting to welcome');
+      setShowLogoutModal(false);
+      router.replace('/onboarding');
+    } catch (error) {
+      console.error('SettingsScreen: Error deleting data:', error);
+      setShowLogoutModal(false);
+      router.replace('/onboarding');
+    }
   };
 
   const handleLogout = () => {
     console.log('SettingsScreen: User tapped logout');
-    Alert.alert(
-      language === 'de' ? 'Abmelden' : 'Sign Out',
-      language === 'de' 
-        ? 'Möchten Sie sich wirklich abmelden?'
-        : 'Are you sure you want to sign out?',
-      [
-        {
-          text: language === 'de' ? 'Abbrechen' : 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: language === 'de' ? 'Abmelden' : 'Sign Out',
-          style: 'destructive',
-          onPress: async () => {
-            console.log('SettingsScreen: Logging out');
-            try {
-              if (signOut) {
-                await signOut();
-              }
-              await AsyncStorage.removeItem('smoke-onboarding-completed');
-              console.log('SettingsScreen: Logged out, redirecting to welcome');
-              router.replace('/onboarding');
-            } catch (error) {
-              console.error('SettingsScreen: Error logging out:', error);
-              Alert.alert(
-                language === 'de' ? 'Fehler' : 'Error',
-                language === 'de' 
-                  ? 'Fehler beim Abmelden. Bitte versuchen Sie es erneut.'
-                  : 'Error signing out. Please try again.'
-              );
-            }
-          },
-        },
-      ]
-    );
+    setShowLogoutModal(true);
+  };
+
+  const confirmLogout = async () => {
+    console.log('SettingsScreen: Confirming logout');
+    try {
+      if (signOut) {
+        await signOut();
+      }
+      await AsyncStorage.removeItem('smoke-onboarding-completed');
+      console.log('SettingsScreen: Logged out, redirecting to welcome');
+      setShowLogoutModal(false);
+      router.replace('/onboarding');
+    } catch (error) {
+      console.error('SettingsScreen: Error logging out:', error);
+      setShowLogoutModal(false);
+      router.replace('/onboarding');
+    }
   };
 
   const openLegalModal = () => {
@@ -189,7 +142,6 @@ export default function SettingsScreen() {
       setupDay: 'Morgen einrichten',
       setupDayDesc: 'Zeiten und Ziel für alle Tage festlegen',
       display: 'Darstellung',
-      darkMode: 'Dunkelmodus',
       backgroundColor: 'Hintergrundfarbe',
       bgWhite: 'Weiß',
       bgBlack: 'Schwarz',
@@ -205,6 +157,10 @@ export default function SettingsScreen() {
       signOut: 'Abmelden',
       legal: 'Rechtliches',
       deleteData: 'Alle Daten löschen',
+      logoutTitle: 'Abmelden',
+      logoutMessage: 'Möchten Sie sich wirklich abmelden?',
+      logoutConfirm: 'Abmelden',
+      cancel: 'Abbrechen',
     },
     en: {
       title: 'Settings',
@@ -213,7 +169,6 @@ export default function SettingsScreen() {
       setupDay: 'Setup Tomorrow',
       setupDayDesc: 'Set times and goal for all days',
       display: 'Display',
-      darkMode: 'Dark Mode',
       backgroundColor: 'Background Color',
       bgWhite: 'White',
       bgBlack: 'Black',
@@ -229,6 +184,10 @@ export default function SettingsScreen() {
       signOut: 'Sign Out',
       legal: 'Legal',
       deleteData: 'Delete All Data',
+      logoutTitle: 'Sign Out',
+      logoutMessage: 'Are you sure you want to sign out?',
+      logoutConfirm: 'Sign Out',
+      cancel: 'Cancel',
     },
   };
 
@@ -307,7 +266,6 @@ export default function SettingsScreen() {
               style={[styles.setupDayCard, { backgroundColor: theme.card }]}
               onPress={() => {
                 console.log('SettingsScreen: User tapped setup day');
-                setShowSetupModal(true);
               }}
             >
               <IconSymbol
@@ -337,21 +295,8 @@ export default function SettingsScreen() {
             <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>
               {t.display}
             </Text>
-            <View style={[styles.card, { backgroundColor: theme.card }]}>
-              <View style={styles.settingRow}>
-                <Text style={[styles.settingLabel, { color: theme.text }]}>
-                  {t.darkMode}
-                </Text>
-                <Switch
-                  value={darkModeEnabled}
-                  onValueChange={handleDarkModeToggle}
-                  trackColor={{ false: theme.border, true: theme.primary }}
-                  thumbColor="#FFFFFF"
-                />
-              </View>
-            </View>
 
-            <View style={[styles.card, { backgroundColor: theme.card, marginTop: 12 }]}>
+            <View style={[styles.card, { backgroundColor: theme.card }]}>
               <Text style={[styles.settingLabel, { color: theme.text, marginBottom: 12 }]}>
                 {t.backgroundColor}
               </Text>
@@ -495,6 +440,42 @@ export default function SettingsScreen() {
       </SafeAreaView>
 
       <Modal
+        visible={showLogoutModal}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={() => setShowLogoutModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.confirmModal, { backgroundColor: theme.card }]}>
+            <Text style={[styles.confirmTitle, { color: theme.text }]}>
+              {t.logoutTitle}
+            </Text>
+            <Text style={[styles.confirmMessage, { color: theme.textSecondary }]}>
+              {t.logoutMessage}
+            </Text>
+            <View style={styles.confirmButtons}>
+              <TouchableOpacity
+                style={[styles.confirmButton, { backgroundColor: theme.background }]}
+                onPress={() => setShowLogoutModal(false)}
+              >
+                <Text style={[styles.confirmButtonText, { color: theme.text }]}>
+                  {t.cancel}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.confirmButton, { backgroundColor: '#FF3B30' }]}
+                onPress={confirmLogout}
+              >
+                <Text style={[styles.confirmButtonText, { color: '#FFFFFF' }]}>
+                  {t.logoutConfirm}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
         visible={showLegalModal}
         animationType="slide"
         presentationStyle="pageSheet"
@@ -548,36 +529,6 @@ export default function SettingsScreen() {
               </Text>
             </View>
           </ScrollView>
-        </SafeAreaView>
-      </Modal>
-
-      <Modal
-        visible={showSetupModal}
-        animationType="slide"
-        presentationStyle="pageSheet"
-        onRequestClose={() => setShowSetupModal(false)}
-      >
-        <SafeAreaView style={[styles.modalContainer, { backgroundColor: theme.background }]}>
-          <View style={[styles.modalHeader, { borderBottomColor: theme.border }]}>
-            <Text style={[styles.modalTitle, { color: theme.text }]}>
-              {language === 'de' ? 'Morgen einrichten' : 'Setup Tomorrow'}
-            </Text>
-            <TouchableOpacity onPress={() => setShowSetupModal(false)} style={styles.closeButton}>
-              <IconSymbol
-                ios_icon_name="xmark"
-                android_material_icon_name="close"
-                size={24}
-                color={theme.text}
-              />
-            </TouchableOpacity>
-          </View>
-          <View style={styles.modalContent}>
-            <Text style={[styles.setupModalText, { color: theme.textSecondary }]}>
-              {language === 'de'
-                ? 'Diese Funktion ermöglicht es Ihnen, Zeiten und Ziele für alle Tage gleichzeitig festzulegen. Bald verfügbar!'
-                : 'This feature allows you to set times and goals for all days at once. Coming soon!'}
-            </Text>
-          </View>
         </SafeAreaView>
       </Modal>
     </View>
@@ -657,11 +608,6 @@ const styles = StyleSheet.create({
   },
   setupDayDescription: {
     fontSize: 13,
-  },
-  settingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
   },
   settingLabel: {
     fontSize: 16,
@@ -753,6 +699,45 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#FF3B30',
   },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 40,
+  },
+  confirmModal: {
+    borderRadius: 20,
+    padding: 24,
+    width: '100%',
+    maxWidth: 400,
+  },
+  confirmTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  confirmMessage: {
+    fontSize: 16,
+    lineHeight: 24,
+    marginBottom: 24,
+    textAlign: 'center',
+  },
+  confirmButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  confirmButton: {
+    flex: 1,
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  confirmButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
   modalContainer: {
     flex: 1,
   },
@@ -809,11 +794,5 @@ const styles = StyleSheet.create({
   userEmail: {
     fontSize: 14,
     fontWeight: '500',
-  },
-  setupModalText: {
-    fontSize: 16,
-    lineHeight: 24,
-    padding: 20,
-    textAlign: 'center',
   },
 });

@@ -160,7 +160,7 @@ function AnimatedTabButton({ isActive, isDark, tab, onPress }: AnimatedTabButton
 const styles = StyleSheet.create({
   container: {
     position: 'absolute',
-    bottom: 32,
+    bottom: 24,
     left: 0,
     right: 0,
     alignItems: 'center',
