@@ -9,6 +9,7 @@ import {
   useColorScheme,
   Switch,
   Modal,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '@/styles/commonStyles';
@@ -17,6 +18,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { ScrollPicker } from '@/components/ScrollPicker';
+import { usePlacement, useUser } from 'expo-superwall';
 
 const generateHours = () => {
   const hours = [];
@@ -66,6 +68,38 @@ export default function SettingsScreen() {
   const theme = isDark ? colors.dark : colors.light;
   const router = useRouter();
 
+  // Superwall hooks
+  const { identify, subscriptionStatus, user: superwallUser } = useUser();
+  const { registerPlacement: registerLifetimePlacement } = usePlacement({
+    onPresent: (info) => {
+      console.log('SettingsScreen: Lifetime paywall presented:', info);
+    },
+    onDismiss: (info, result) => {
+      console.log('SettingsScreen: Lifetime paywall dismissed:', result);
+      if (result === 'purchased') {
+        Alert.alert('Erfolg!', 'Lebenslanger Zugang freigeschaltet!');
+      }
+    },
+    onError: (error) => {
+      console.error('SettingsScreen: Lifetime paywall error:', error);
+    },
+  });
+
+  const { registerPlacement: registerSubscriptionPlacement } = usePlacement({
+    onPresent: (info) => {
+      console.log('SettingsScreen: Subscription paywall presented:', info);
+    },
+    onDismiss: (info, result) => {
+      console.log('SettingsScreen: Subscription paywall dismissed:', result);
+      if (result === 'purchased') {
+        Alert.alert('Erfolg!', 'Abonnement aktiviert!');
+      }
+    },
+    onError: (error) => {
+      console.error('SettingsScreen: Subscription paywall error:', error);
+    },
+  });
+
   const [language, setLanguage] = useState<'de' | 'en'>('de');
   const [showLegalModal, setShowLegalModal] = useState(false);
   const [applyToAllDays, setApplyToAllDays] = useState(false);
@@ -85,6 +119,16 @@ export default function SettingsScreen() {
   useEffect(() => {
     loadAllSettings();
   }, []);
+
+  useEffect(() => {
+    // Identify user with Superwall when user is available
+    if (superwallUser?.appUserId) {
+      console.log('SettingsScreen: Identifying user with Superwall:', superwallUser.appUserId);
+      identify(superwallUser.appUserId).catch((error) => {
+        console.error('SettingsScreen: Error identifying user with Superwall:', error);
+      });
+    }
+  }, [superwallUser, identify]);
 
   const loadAllSettings = async () => {
     try {
@@ -195,6 +239,36 @@ export default function SettingsScreen() {
     setShowLegalModal(true);
   };
 
+  const handleLifetimeAccess = async () => {
+    console.log('SettingsScreen: User tapped lifetime access');
+    try {
+      await registerLifetimePlacement({
+        placement: 'lifetime_access',
+        feature: () => {
+          console.log('SettingsScreen: User has lifetime access');
+          Alert.alert('Erfolg!', 'Sie haben bereits lebenslangen Zugang!');
+        },
+      });
+    } catch (error) {
+      console.error('SettingsScreen: Error showing lifetime paywall:', error);
+    }
+  };
+
+  const handleSubscribe = async () => {
+    console.log('SettingsScreen: User tapped subscribe');
+    try {
+      await registerSubscriptionPlacement({
+        placement: 'monthly_subscription',
+        feature: () => {
+          console.log('SettingsScreen: User has active subscription');
+          Alert.alert('Erfolg!', 'Sie haben bereits ein aktives Abonnement!');
+        },
+      });
+    } catch (error) {
+      console.error('SettingsScreen: Error showing subscription paywall:', error);
+    }
+  };
+
   const texts = {
     de: {
       title: 'Einstellungen',
@@ -214,6 +288,7 @@ export default function SettingsScreen() {
       lifetimePrice: 'Einmaliger Kauf • 20 CHF',
       subscribe: 'Abonnieren',
       subscribePrice: '1 CHF / Monat • Eigene Themes, Statistiken & mehr',
+      subscriptionActive: 'Abonnement aktiv',
       signOut: 'Abmelden',
       legal: 'Rechtliches',
       deleteData: 'Alle Daten löschen',
@@ -245,6 +320,7 @@ export default function SettingsScreen() {
       lifetimePrice: 'One-time purchase • 20 CHF',
       subscribe: 'Subscribe',
       subscribePrice: '1 CHF / Month • Custom themes, statistics & more',
+      subscriptionActive: 'Subscription active',
       signOut: 'Sign Out',
       legal: 'Legal',
       deleteData: 'Delete All Data',
@@ -261,6 +337,7 @@ export default function SettingsScreen() {
   };
 
   const t = texts[language];
+  const isSubscribed = subscriptionStatus?.status === 'ACTIVE';
 
   const [wakeHour, wakeMinute] = scheduleWakeTime.split(':');
   const [sleepHour, sleepMinute] = scheduleSleepTime.split(':');
@@ -291,6 +368,36 @@ export default function SettingsScreen() {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
+          {superwallUser && (
+            <Animated.View entering={FadeIn.duration(400)} style={styles.section}>
+              <View style={[styles.card, { backgroundColor: theme.card }]}>
+                <View style={styles.userInfo}>
+                  <IconSymbol
+                    ios_icon_name="person.circle.fill"
+                    android_material_icon_name="account-circle"
+                    size={48}
+                    color={theme.primary}
+                  />
+                  <View style={styles.userDetails}>
+                    <Text style={[styles.userName, { color: theme.text }]}>
+                      User
+                    </Text>
+                    <Text style={[styles.userEmail, { color: theme.textSecondary }]}>
+                      {superwallUser.appUserId}
+                    </Text>
+                    {isSubscribed && (
+                      <View style={[styles.subscriptionBadge, { backgroundColor: theme.primary }]}>
+                        <Text style={styles.subscriptionBadgeText}>
+                          {t.subscriptionActive}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                </View>
+              </View>
+            </Animated.View>
+          )}
+
           <Animated.View entering={FadeIn.duration(400)} style={styles.section}>
             <View style={[styles.card, { backgroundColor: theme.card }]}>
               <View style={styles.setupHeader}>
@@ -444,7 +551,7 @@ export default function SettingsScreen() {
             </Text>
             <TouchableOpacity
               style={[styles.premiumCard, { backgroundColor: theme.primary }]}
-              onPress={() => console.log('SettingsScreen: Lifetime access tapped')}
+              onPress={handleLifetimeAccess}
             >
               <Text style={styles.premiumTitle}>
                 {t.lifetimeAccess}
@@ -456,7 +563,7 @@ export default function SettingsScreen() {
 
             <TouchableOpacity
               style={[styles.card, { backgroundColor: theme.card }]}
-              onPress={() => console.log('SettingsScreen: Subscribe tapped')}
+              onPress={handleSubscribe}
             >
               <Text style={[styles.subscribeTitle, { color: theme.text }]}>
                 {t.subscribe}
@@ -1055,5 +1162,34 @@ const styles = StyleSheet.create({
   pickerSeparator: {
     fontSize: 32,
     fontWeight: '700',
+  },
+  userInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+  },
+  userDetails: {
+    flex: 1,
+  },
+  userName: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  userEmail: {
+    fontSize: 14,
+    fontWeight: '500',
+    marginBottom: 8,
+  },
+  subscriptionBadge: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  subscriptionBadgeText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
 });
