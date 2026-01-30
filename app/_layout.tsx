@@ -23,7 +23,8 @@ import Constants from "expo-constants";
 const BACKEND_URL = Constants.expoConfig?.extra?.backendUrl || "";
 console.log('🔗 Backend URL configured:', BACKEND_URL);
 
-// Superwall API Key - Replace with your actual API key from Superwall dashboard
+// ⚠️ IMPORTANT: Replace this with your actual Superwall API key from https://superwall.com/dashboard
+// Get your API key from: Superwall Dashboard → Settings → API Keys → iOS API Key
 const SUPERWALL_API_KEY = "pk_d1c3c5e8e8f8e8e8e8e8e8e8e8e8e8e8";
 
 SplashScreen.preventAutoHideAsync();
@@ -53,7 +54,7 @@ const customDarkTheme: Theme = {
 };
 
 export default function RootLayout() {
-  console.log('RootLayout: Initializing app with Superwall');
+  console.log('RootLayout: Initializing app with Superwall payment integration');
   const [loaded] = useFonts({
     SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
   });
@@ -122,7 +123,8 @@ export default function RootLayout() {
       <SuperwallProvider
         apiKeys={{ ios: SUPERWALL_API_KEY }}
         onConfigurationError={(error) => {
-          console.error('Superwall configuration error:', error);
+          console.error('❌ Superwall configuration error:', error);
+          console.error('⚠️ Make sure you have replaced SUPERWALL_API_KEY with your actual API key from Superwall dashboard');
         }}
       >
         <ThemeProvider value={colorScheme === "dark" ? customDarkTheme : customLightTheme}>

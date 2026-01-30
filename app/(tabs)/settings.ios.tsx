@@ -68,35 +68,52 @@ export default function SettingsScreen() {
   const theme = isDark ? colors.dark : colors.light;
   const router = useRouter();
 
-  // Superwall hooks
+  // Superwall hooks for payment integration
   const { identify, subscriptionStatus, user: superwallUser } = useUser();
+  
+  // Lifetime Access Paywall
   const { registerPlacement: registerLifetimePlacement } = usePlacement({
     onPresent: (info) => {
-      console.log('SettingsScreen: Lifetime paywall presented:', info);
+      console.log('💳 SettingsScreen (iOS): Lifetime access paywall presented:', info);
     },
     onDismiss: (info, result) => {
-      console.log('SettingsScreen: Lifetime paywall dismissed:', result);
+      console.log('💳 SettingsScreen (iOS): Lifetime access paywall dismissed with result:', result);
       if (result === 'purchased') {
+        console.log('✅ SettingsScreen (iOS): User purchased lifetime access!');
         Alert.alert('Erfolg!', 'Lebenslanger Zugang freigeschaltet!');
+      } else if (result === 'declined') {
+        console.log('❌ SettingsScreen (iOS): User declined lifetime access purchase');
+      } else if (result === 'restored') {
+        console.log('🔄 SettingsScreen (iOS): User restored lifetime access purchase');
+        Alert.alert('Wiederhergestellt!', 'Ihr Kauf wurde wiederhergestellt!');
       }
     },
     onError: (error) => {
-      console.error('SettingsScreen: Lifetime paywall error:', error);
+      console.error('❌ SettingsScreen (iOS): Lifetime paywall error:', error);
+      Alert.alert('Fehler', 'Es gab ein Problem beim Laden der Zahlungsseite. Bitte versuchen Sie es später erneut.');
     },
   });
 
+  // Monthly Subscription Paywall
   const { registerPlacement: registerSubscriptionPlacement } = usePlacement({
     onPresent: (info) => {
-      console.log('SettingsScreen: Subscription paywall presented:', info);
+      console.log('💳 SettingsScreen (iOS): Subscription paywall presented:', info);
     },
     onDismiss: (info, result) => {
-      console.log('SettingsScreen: Subscription paywall dismissed:', result);
+      console.log('💳 SettingsScreen (iOS): Subscription paywall dismissed with result:', result);
       if (result === 'purchased') {
+        console.log('✅ SettingsScreen (iOS): User subscribed!');
         Alert.alert('Erfolg!', 'Abonnement aktiviert!');
+      } else if (result === 'declined') {
+        console.log('❌ SettingsScreen (iOS): User declined subscription');
+      } else if (result === 'restored') {
+        console.log('🔄 SettingsScreen (iOS): User restored subscription');
+        Alert.alert('Wiederhergestellt!', 'Ihr Abonnement wurde wiederhergestellt!');
       }
     },
     onError: (error) => {
-      console.error('SettingsScreen: Subscription paywall error:', error);
+      console.error('❌ SettingsScreen (iOS): Subscription paywall error:', error);
+      Alert.alert('Fehler', 'Es gab ein Problem beim Laden der Zahlungsseite. Bitte versuchen Sie es später erneut.');
     },
   });
 
@@ -122,10 +139,11 @@ export default function SettingsScreen() {
 
   useEffect(() => {
     // Identify user with Superwall when user is available
+    // This connects the user with Superwall for payment tracking
     if (superwallUser?.appUserId) {
-      console.log('SettingsScreen: Identifying user with Superwall:', superwallUser.appUserId);
+      console.log('💳 SettingsScreen (iOS): Identifying user with Superwall for payment tracking:', superwallUser.appUserId);
       identify(superwallUser.appUserId).catch((error) => {
-        console.error('SettingsScreen: Error identifying user with Superwall:', error);
+        console.error('❌ SettingsScreen (iOS): Error identifying user with Superwall:', error);
       });
     }
   }, [superwallUser, identify]);
@@ -154,23 +172,23 @@ export default function SettingsScreen() {
         setScheduleTargetCigarettes(parseInt(savedCigarettes));
       }
     } catch (error) {
-      console.error('SettingsScreen: Error loading settings:', error);
+      console.error('SettingsScreen (iOS): Error loading settings:', error);
     }
   };
 
   const handleLanguageChange = async () => {
     const newLanguage = language === 'de' ? 'en' : 'de';
-    console.log('SettingsScreen: Changing language to', newLanguage);
+    console.log('SettingsScreen (iOS): Changing language to', newLanguage);
     setLanguage(newLanguage);
     try {
       await AsyncStorage.setItem('app-language', newLanguage);
     } catch (error) {
-      console.error('SettingsScreen: Error saving language:', error);
+      console.error('SettingsScreen (iOS): Error saving language:', error);
     }
   };
 
   const handleBackgroundColorChange = async (color: 'white' | 'black' | 'gray') => {
-    console.log('SettingsScreen: Changing background color to', color);
+    console.log('SettingsScreen (iOS): Changing background color to', color);
     setBackgroundColor(color);
     try {
       await AsyncStorage.setItem('app-background-color', color);
@@ -178,94 +196,96 @@ export default function SettingsScreen() {
         router.replace('/(tabs)/settings');
       }, 100);
     } catch (error) {
-      console.error('SettingsScreen: Error saving background color:', error);
+      console.error('SettingsScreen (iOS): Error saving background color:', error);
     }
   };
 
   const handleApplyToAllDaysToggle = async (value: boolean) => {
-    console.log('SettingsScreen: Toggling apply to all days to', value);
+    console.log('SettingsScreen (iOS): Toggling apply to all days to', value);
     setApplyToAllDays(value);
     try {
       await AsyncStorage.setItem('apply-to-all-days', value.toString());
     } catch (error) {
-      console.error('SettingsScreen: Error saving apply to all days:', error);
+      console.error('SettingsScreen (iOS): Error saving apply to all days:', error);
     }
   };
 
   const handleSaveSchedule = async () => {
-    console.log('SettingsScreen: Saving schedule settings');
+    console.log('SettingsScreen (iOS): Saving schedule settings');
     try {
       await AsyncStorage.setItem('schedule-wake-time', scheduleWakeTime);
       await AsyncStorage.setItem('schedule-sleep-time', scheduleSleepTime);
       await AsyncStorage.setItem('schedule-cigarettes', scheduleTargetCigarettes.toString());
     } catch (error) {
-      console.error('SettingsScreen: Error saving schedule:', error);
+      console.error('SettingsScreen (iOS): Error saving schedule:', error);
     }
   };
 
   const handleDeleteData = () => {
-    console.log('SettingsScreen: User tapped delete data');
+    console.log('SettingsScreen (iOS): User tapped delete data');
     AsyncStorage.clear()
       .then(() => {
-        console.log('SettingsScreen: Data deleted, redirecting to welcome');
+        console.log('SettingsScreen (iOS): Data deleted, redirecting to welcome');
         router.replace('/onboarding');
       })
       .catch((error) => {
-        console.error('SettingsScreen: Error deleting data:', error);
+        console.error('SettingsScreen (iOS): Error deleting data:', error);
       });
   };
 
   const handleLogout = () => {
-    console.log('SettingsScreen: User tapped logout');
+    console.log('SettingsScreen (iOS): User tapped logout');
     setShowLogoutModal(true);
   };
 
   const confirmLogout = async () => {
-    console.log('SettingsScreen: Confirming logout');
+    console.log('SettingsScreen (iOS): Confirming logout');
     try {
       await AsyncStorage.removeItem('smoke-onboarding-completed');
-      console.log('SettingsScreen: Logged out, redirecting to welcome');
+      console.log('SettingsScreen (iOS): Logged out, redirecting to welcome');
       setShowLogoutModal(false);
       router.replace('/onboarding');
     } catch (error) {
-      console.error('SettingsScreen: Error logging out:', error);
+      console.error('SettingsScreen (iOS): Error logging out:', error);
       setShowLogoutModal(false);
       router.replace('/onboarding');
     }
   };
 
   const openLegalModal = () => {
-    console.log('SettingsScreen: Opening legal modal');
+    console.log('SettingsScreen (iOS): Opening legal modal');
     setShowLegalModal(true);
   };
 
   const handleLifetimeAccess = async () => {
-    console.log('SettingsScreen: User tapped lifetime access');
+    console.log('💳 SettingsScreen (iOS): User tapped lifetime access - triggering Superwall paywall');
     try {
       await registerLifetimePlacement({
         placement: 'lifetime_access',
         feature: () => {
-          console.log('SettingsScreen: User has lifetime access');
-          Alert.alert('Erfolg!', 'Sie haben bereits lebenslangen Zugang!');
+          console.log('✅ SettingsScreen (iOS): User already has lifetime access');
+          Alert.alert('Bereits freigeschaltet!', 'Sie haben bereits lebenslangen Zugang!');
         },
       });
     } catch (error) {
-      console.error('SettingsScreen: Error showing lifetime paywall:', error);
+      console.error('❌ SettingsScreen (iOS): Error showing lifetime paywall:', error);
+      Alert.alert('Fehler', 'Es gab ein Problem beim Laden der Zahlungsseite. Bitte versuchen Sie es später erneut.');
     }
   };
 
   const handleSubscribe = async () => {
-    console.log('SettingsScreen: User tapped subscribe');
+    console.log('💳 SettingsScreen (iOS): User tapped subscribe - triggering Superwall paywall');
     try {
       await registerSubscriptionPlacement({
         placement: 'monthly_subscription',
         feature: () => {
-          console.log('SettingsScreen: User has active subscription');
-          Alert.alert('Erfolg!', 'Sie haben bereits ein aktives Abonnement!');
+          console.log('✅ SettingsScreen (iOS): User already has active subscription');
+          Alert.alert('Bereits abonniert!', 'Sie haben bereits ein aktives Abonnement!');
         },
       });
     } catch (error) {
-      console.error('SettingsScreen: Error showing subscription paywall:', error);
+      console.error('❌ SettingsScreen (iOS): Error showing subscription paywall:', error);
+      Alert.alert('Fehler', 'Es gab ein Problem beim Laden der Zahlungsseite. Bitte versuchen Sie es später erneut.');
     }
   };
 

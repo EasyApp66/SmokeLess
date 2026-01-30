@@ -45,35 +45,52 @@ export default function SettingsScreen() {
   const router = useRouter();
   const { signOut, user } = useAuth();
   
-  // Superwall hooks
+  // Superwall hooks for payment integration
   const { identify, subscriptionStatus } = useUser();
+  
+  // Lifetime Access Paywall
   const { registerPlacement: registerLifetimePlacement } = usePlacement({
     onPresent: (info) => {
-      console.log('SettingsScreen: Lifetime paywall presented:', info);
+      console.log('💳 SettingsScreen: Lifetime access paywall presented:', info);
     },
     onDismiss: (info, result) => {
-      console.log('SettingsScreen: Lifetime paywall dismissed:', result);
+      console.log('💳 SettingsScreen: Lifetime access paywall dismissed with result:', result);
       if (result === 'purchased') {
+        console.log('✅ SettingsScreen: User purchased lifetime access!');
         Alert.alert('Erfolg!', 'Lebenslanger Zugang freigeschaltet!');
+      } else if (result === 'declined') {
+        console.log('❌ SettingsScreen: User declined lifetime access purchase');
+      } else if (result === 'restored') {
+        console.log('🔄 SettingsScreen: User restored lifetime access purchase');
+        Alert.alert('Wiederhergestellt!', 'Ihr Kauf wurde wiederhergestellt!');
       }
     },
     onError: (error) => {
-      console.error('SettingsScreen: Lifetime paywall error:', error);
+      console.error('❌ SettingsScreen: Lifetime paywall error:', error);
+      Alert.alert('Fehler', 'Es gab ein Problem beim Laden der Zahlungsseite. Bitte versuchen Sie es später erneut.');
     },
   });
 
+  // Monthly Subscription Paywall
   const { registerPlacement: registerSubscriptionPlacement } = usePlacement({
     onPresent: (info) => {
-      console.log('SettingsScreen: Subscription paywall presented:', info);
+      console.log('💳 SettingsScreen: Subscription paywall presented:', info);
     },
     onDismiss: (info, result) => {
-      console.log('SettingsScreen: Subscription paywall dismissed:', result);
+      console.log('💳 SettingsScreen: Subscription paywall dismissed with result:', result);
       if (result === 'purchased') {
+        console.log('✅ SettingsScreen: User subscribed!');
         Alert.alert('Erfolg!', 'Abonnement aktiviert!');
+      } else if (result === 'declined') {
+        console.log('❌ SettingsScreen: User declined subscription');
+      } else if (result === 'restored') {
+        console.log('🔄 SettingsScreen: User restored subscription');
+        Alert.alert('Wiederhergestellt!', 'Ihr Abonnement wurde wiederhergestellt!');
       }
     },
     onError: (error) => {
-      console.error('SettingsScreen: Subscription paywall error:', error);
+      console.error('❌ SettingsScreen: Subscription paywall error:', error);
+      Alert.alert('Fehler', 'Es gab ein Problem beim Laden der Zahlungsseite. Bitte versuchen Sie es später erneut.');
     },
   });
 
@@ -88,10 +105,11 @@ export default function SettingsScreen() {
 
   useEffect(() => {
     // Identify user with Superwall when user is available
+    // This connects the Better Auth user with Superwall for payment tracking
     if (user?.id) {
-      console.log('SettingsScreen: Identifying user with Superwall:', user.id);
+      console.log('💳 SettingsScreen: Identifying user with Superwall for payment tracking:', user.id);
       identify(user.id).catch((error) => {
-        console.error('SettingsScreen: Error identifying user with Superwall:', error);
+        console.error('❌ SettingsScreen: Error identifying user with Superwall:', error);
       });
     }
   }, [user, identify]);
@@ -179,32 +197,34 @@ export default function SettingsScreen() {
   };
 
   const handleLifetimeAccess = async () => {
-    console.log('SettingsScreen: User tapped lifetime access');
+    console.log('💳 SettingsScreen: User tapped lifetime access - triggering Superwall paywall');
     try {
       await registerLifetimePlacement({
         placement: 'lifetime_access',
         feature: () => {
-          console.log('SettingsScreen: User has lifetime access');
-          Alert.alert('Erfolg!', 'Sie haben bereits lebenslangen Zugang!');
+          console.log('✅ SettingsScreen: User already has lifetime access');
+          Alert.alert('Bereits freigeschaltet!', 'Sie haben bereits lebenslangen Zugang!');
         },
       });
     } catch (error) {
-      console.error('SettingsScreen: Error showing lifetime paywall:', error);
+      console.error('❌ SettingsScreen: Error showing lifetime paywall:', error);
+      Alert.alert('Fehler', 'Es gab ein Problem beim Laden der Zahlungsseite. Bitte versuchen Sie es später erneut.');
     }
   };
 
   const handleSubscribe = async () => {
-    console.log('SettingsScreen: User tapped subscribe');
+    console.log('💳 SettingsScreen: User tapped subscribe - triggering Superwall paywall');
     try {
       await registerSubscriptionPlacement({
         placement: 'monthly_subscription',
         feature: () => {
-          console.log('SettingsScreen: User has active subscription');
-          Alert.alert('Erfolg!', 'Sie haben bereits ein aktives Abonnement!');
+          console.log('✅ SettingsScreen: User already has active subscription');
+          Alert.alert('Bereits abonniert!', 'Sie haben bereits ein aktives Abonnement!');
         },
       });
     } catch (error) {
-      console.error('SettingsScreen: Error showing subscription paywall:', error);
+      console.error('❌ SettingsScreen: Error showing subscription paywall:', error);
+      Alert.alert('Fehler', 'Es gab ein Problem beim Laden der Zahlungsseite. Bitte versuchen Sie es später erneut.');
     }
   };
 
